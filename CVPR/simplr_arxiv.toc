@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}\hskip -1em.\nobreakspace {}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}\hskip -1em.\nobreakspace {}Related Work}{2}{section.2}%
+\contentsline {section}{\numberline {3}\hskip -1em.\nobreakspace {}Background}{3}{section.3}%
+\contentsline {paragraph}{Multi-head Box-Attention.}{3}{section*.2}%
+\contentsline {paragraph}{Multi-head Deformable Attention.}{3}{section*.3}%
+\contentsline {section}{\numberline {4}\hskip -1em.\nobreakspace {}SimPLR\xspace : A Simple and Plain Detector}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}\hskip -1em.\nobreakspace {}Scale-aware attention}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}\hskip -1em.\nobreakspace {}Network Architecture}{5}{subsection.4.2}%
+\contentsline {section}{\numberline {5}\hskip -1em.\nobreakspace {}Experiments}{6}{section.5}%
+\contentsline {section}{\numberline {6}\hskip -1em.\nobreakspace {}Conclusion}{8}{section.6}%
+\contentsline {section}{\numberline {A}\hskip -1em.\nobreakspace {}Implementation Details}{9}{appendix.A}%
+\contentsline {section}{\numberline {B}\hskip -1em.\nobreakspace {}Additional Results}{10}{appendix.B}%
+\contentsline {section}{\numberline {C}\hskip -1em.\nobreakspace {}Qualitative results}{10}{appendix.C}%
+\contentsline {section}{\numberline {D}\hskip -1em.\nobreakspace {}Asset Licenses}{11}{appendix.D}%

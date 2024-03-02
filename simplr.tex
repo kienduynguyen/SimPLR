@@ -1,0 +1,163 @@
+\documentclass[runningheads]{llncs}
+
+% ---------------------------------------------------------------
+% Include basic ECCV package
+ 
+% TODO REVIEW: Insert your submission number below by replacing '*****'
+% TODO FINAL: Comment out the following line for the camera-ready version
+\usepackage[review,year=2024,ID=4126]{eccv}
+% TODO FINAL: Un-comment the following line for the camera-ready version
+%\usepackage{eccv}
+
+% OPTIONAL: Un-comment the following line for a version which is easier to read
+% on small portrait-orientation screens (e.g., mobile phones, or beside other windows)
+%\usepackage[mobile]{eccv}
+
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+
+% ---------------------------------------------------------------
+% Other packages
+
+% Commonly used abbreviations (\eg, \ie, \etc, \cf, \etal, etc.)
+\usepackage{eccvabbrv}
+
+% Include other packages here, before hyperref.
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+% The "axessiblity" package can be found at: https://ctan.org/pkg/axessibility?lang=en
+\usepackage[accsupp]{axessibility}  % Improves PDF readability for those with disabilities.
+
+
+% ---------------------------------------------------------------
+% Hyperref package
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% Please disable hyperref *only* if you encounter grave issues.
+% hyperref with option pagebackref eases the reviewers' job, but should be disabled for the final version.
+%
+% If you comment hyperref and then uncomment it, you should delete
+% main.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you
+%  should be clear).
+
+% TODO FINAL: Comment out the following line for the camera-ready version
+\usepackage[pagebackref,breaklinks,colorlinks,citecolor=eccvblue]{hyperref}
+% TODO FINAL: Un-comment the following line for the camera-ready version
+%\usepackage{hyperref}
+
+% Support for ORCID icon
+\usepackage{orcidlink}
+
+
+\definecolor{mygray}{rgb}{0.5, 0.5, 0.5}
+\definecolor{fpn}{HTML}{04d45e}
+\definecolor{ss}{HTML}{ff8408}
+
+% comments
+\newcommand{\cs}[1]{\textcolor{magenta}{CS: #1}}
+\newcommand{\kien}[1]{\textcolor{blue}{DK: #1}}
+\newcommand{\mo}[1]{\textcolor{red}{MO: #1}}
+
+\newcommand{\boldparagraph}[1]{\vspace{0.05em}\noindent{\bf #1} }
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\softmax}{\mathrm{softmax}\xspace}%
+\newcommand{\sigmoid}{\mathrm{sigmoid}\xspace}%
+
+\def\train{{\texttt{train}}\xspace}
+\def\val{{\texttt{val}}\xspace}
+\def\trainval{{\texttt{trainval}}\xspace}
+\def\kval{{\texttt{k-val}}\xspace}
+\def\test{{\texttt{test-dev}}\xspace}
+
+% fonts
+\newcommand{\ours}[0]{SimPLR\xspace}
+\newcommand{\boxattn}[0]{Box-Attention\xspace}
+\newcommand{\boxattnop}[0]{BoxAttention\xspace}  % an operator is better defined without dash
+\newcommand{\deformattnop}[0]{DeformableAttention\xspace}  % an operator is better defined without dash
+\newcommand{\instanceattn}[0]{Instance-Attention\xspace}
+\newcommand{\fixedbox}[0]{FixedBoxAttn\xspace}
+\newcommand{\dynamicbox}[0]{DynamicBoxAttn\xspace}
+\newcommand{\msdynamicbox}[0]{MSDynamicBoxAttn\xspace}
+
+
+\newcolumntype{x}[1]{>{\centering\arraybackslash}p{#1pt}}
+\newcolumntype{a}{>{\columncolor{verylightgray}}c}
+\newlength\savewidth\newcommand\shline{\noalign{\global\savewidth\arrayrulewidth
+  \global\arrayrulewidth 1pt}\hline\noalign{\global\arrayrulewidth\savewidth}}
+\newcommand\hshline{\noalign{\global\savewidth\arrayrulewidth
+  \global\arrayrulewidth 0.6pt}\hline\noalign{\global\arrayrulewidth\savewidth}}
+\newcommand{\tablestyle}[2]{\setlength{\tabcolsep}{#1}\renewcommand{\arraystretch}{#2}\centering}
+
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+
+\def\eg{\emph{e.g}\onedot} \def\Eg{\emph{E.g}\onedot}
+\def\ie{\emph{i.e}\onedot} \def\Ie{\emph{I.e}\onedot}
+\def\cf{\emph{c.f}\onedot} \def\Cf{\emph{C.f}\onedot}
+\def\etc{\emph{etc}\onedot} \def\vs{\emph{vs}\onedot}
+\def\wrt{w.r.t\onedot} \def\dof{d.o.f\onedot}
+\def\etal{\emph{et al}\onedot}
+\makeatother
+
+% Support for easy cross-referencing
+\usepackage[capitalize]{cleveref}
+\crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Tab.}{Tabs.}
+
+\begin{document}
+
+% ---------------------------------------------------------------
+% TODO REVIEW: Replace with your title
+\title{\ours: A Simple and Plain Transformer for\\ Object Detection and Segmentation} 
+
+% TODO REVIEW: If the paper title is too long for the running head, you can set
+% an abbreviated paper title here. If not, comment out.
+\titlerunning{Abbreviated paper title}
+
+% TODO FINAL: Replace with your author list. 
+% Include the authors' OCRID for the camera-ready version, if at all possible.
+\author{First Author\inst{1}\orcidlink{0000-1111-2222-3333} \and
+Second Author\inst{2,3}\orcidlink{1111-2222-3333-4444} \and
+Third Author\inst{3}\orcidlink{2222--3333-4444-5555}}
+
+% TODO FINAL: Replace with an abbreviated list of authors.
+\authorrunning{F.~Author et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+
+% TODO FINAL: Replace with your institution list.
+\institute{Princeton University, Princeton NJ 08544, USA \and
+Springer Heidelberg, Tiergartenstr.~17, 69121 Heidelberg, Germany
+\email{lncs@springer.com}\\
+\url{http://www.springer.com/gp/computer-science/lncs} \and
+ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
+\email{\{abc,lncs\}@uni-heidelberg.de}}
+
+\maketitle
+
+\input{sec/abstract}
+\input{sec/introduction}
+\input{sec/related_work}
+% \input{sec/background}
+\input{sec/method}
+\input{sec/experiment}
+\input{sec/conclusion}
+
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+{
+  \small
+  \bibliographystyle{splncs04}
+  \bibliography{simplr}
+}
+\end{document}

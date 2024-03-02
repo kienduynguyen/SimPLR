@@ -1,0 +1,228 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{vaswani2017transformer}
+\citation{liu2021swintransformer,dosovitskiy2021vit}
+\citation{nicolas2020detr,zhu2021deformable,nguyen2022boxer}
+\citation{wang2021maxdeeplab,zhang2021knet,cheng2022mask2former}
+\citation{brown2020gpt3,devlin2019bert}
+\citation{liu2021swintransformer}
+\citation{fan2021mvit,wang2021pvit,heo2021rethinkingvit}
+\citation{tsung2017fpn}
+\citation{li2022vitdet}
+\citation{dosovitskiy2021vit}
+\citation{he2022mae,bao2022beit,dehghani2023scalingvit22b}
+\citation{nicolas2020detr}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{Introduction}{section.1}{}}
+\newlabel{sec:introduction@cref}{{[section][1][]1}{[1][1][]1}}
+\citation{dosovitskiy2021vit,li2022vitdet}
+\citation{ren2015faster_rcnn,he2017maskrcnn}
+\citation{zhu2021deformable,nguyen2022boxer,cheng2022mask2former}
+\citation{nguyen2022boxer}
+\citation{li2022vitdet}
+\citation{nguyen2022boxer}
+\citation{li2022vitdet}
+\citation{li2022vitdet,nguyen2022boxer}
+\citation{nguyen2022boxer}
+\newlabel{fig:fpn_vis}{{1a}{2}{Subfigure 1a}{subfigure.1.1}{}}
+\newlabel{sub@fig:fpn_vis}{{(a)}{a}{Subfigure 1a\relax }{subfigure.1.1}{}}
+\newlabel{fig:fpn_vis@cref}{{[subfigure][1][1]1a}{[1][2][]2}}
+\newlabel{fig:fpn_comp}{{1b}{2}{Subfigure 1b}{subfigure.1.2}{}}
+\newlabel{sub@fig:fpn_comp}{{(b)}{b}{Subfigure 1b\relax }{subfigure.1.2}{}}
+\newlabel{fig:fpn_comp@cref}{{[subfigure][2][1]1b}{[1][2][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  \textbf  {A single-scale detector is non-trivial. (a)} We visualize the alignment between feature scales in the feature pyramids and the size of COCO detected objects in BoxeR \citep  {nguyen2022boxer}. Here, we adopt SimpleFPN with ViT from \citep  {li2022vitdet} as backbone for BoxeR. A strong correlation between feature scale and size of detected objects suggests that feature pyramids remove the difficulties in detecting objects of various sizes. \textbf  {(b)} Even with a pre-trained ViT backbone, feature pyramids are important for both convolution-based (ViTDet) and transformer-based (BoxeR) detectors. In this paper, however, we demonstrate that the plain detector\footnotemark , SimPLR\xspace  , yields competitive performance compared to multi-scale counterparts, and the scale-aware attention in its transformer-based detection head is able to capture multi-scale patterns from single-scale input. \relax }}{2}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:single_scale}{{1}{2}{\textbf {A single-scale detector is non-trivial. (a)} We visualize the alignment between feature scales in the feature pyramids and the size of COCO detected objects in BoxeR \citep {nguyen2022boxer}. Here, we adopt SimpleFPN with ViT from \citep {li2022vitdet} as backbone for BoxeR. A strong correlation between feature scale and size of detected objects suggests that feature pyramids remove the difficulties in detecting objects of various sizes. \textbf {(b)} Even with a pre-trained ViT backbone, feature pyramids are important for both convolution-based (ViTDet) and transformer-based (BoxeR) detectors. In this paper, however, we demonstrate that the plain detector\protect \footnotemark , \ours , yields competitive performance compared to multi-scale counterparts, and the scale-aware attention in its transformer-based detection head is able to capture multi-scale patterns from single-scale input. \relax }{figure.caption.1}{}}
+\newlabel{fig:single_scale@cref}{{[figure][1][]1}{[1][2][]2}}
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces { \textbf {Strong correlation} between feature scales in feature pyramids and object sizes.}}}{2}{subfigure.1.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces { \textbf {Feature pyramids are important}, showing a considerable improvement over single-scale input in current detectors.}}}{2}{subfigure.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{2}{section.2}\protected@file@percent }
+\citation{vaswani2017transformer}
+\citation{nguyen2022boxer}
+\citation{wei2016ssd,tsung2017fpn,zhu2021deformable}
+\citation{li2022vitdet,chen2022uvit}
+\citation{vaswani2017transformer}
+\citation{li2022vitdet}
+\citation{nguyen2022boxer,cheng2022mask2former}
+\citation{liu2021swintransformer}
+\citation{li2022vitdet}
+\citation{nguyen2022boxer,cheng2022mask2former}
+\citation{liu2021swintransformer}
+\citation{nicolas2020detr}
+\citation{li2022vitdet}
+\citation{dosovitskiy2021vit}
+\citation{liu2021swintransformer}
+\citation{fan2021mvit}
+\newlabel{eq:multihead}{{3}{3}{Background}{equation.2.3}{}}
+\newlabel{eq:multihead@cref}{{[equation][3][]3}{[1][3][]3}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}SimPLR\xspace  : A Simple and Plain Single-Scale Object Detector}{3}{section.3}\protected@file@percent }
+\newlabel{sec:single_scale}{{3}{3}{\ours : A Simple and Plain Single-Scale Object Detector}{section.3}{}}
+\newlabel{sec:single_scale@cref}{{[section][3][]3}{[1][3][]3}}
+\citation{li2022vitdet}
+\citation{zhu2021deformable}
+\citation{vaswani2017transformer}
+\citation{nguyen2022boxer}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  \textbf  {Object detection architectures. Left:} The plain-backbone detector from\nobreakspace  {}\cite  {li2022vitdet} whose input (denoted in the dashed region) are multi-scale features. \textbf  {Middle:} State-of-the-art end-to-end detectors\nobreakspace  {}\citep  {nguyen2022boxer,cheng2022mask2former} utilize a hierarchical backbone (\emph  {i.e}\onedot  , Swin\nobreakspace  {}\citep  {liu2021swintransformer}) to create multi-scale inputs. \textbf  {Right:} Our simple single-scale detector following the end-to-end framework. Where existing detectors require feature pyramids to be effective, we propose a plain detector, SimPLR\xspace  , whose backbone and detection head operate on a single-scale feature map. Using only single-scale input, SimPLR\xspace  achieves on par or even better performance compared to multi-scale counterparts while being more efficient. \relax }}{4}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:compare}{{2}{4}{\textbf {Object detection architectures. Left:} The plain-backbone detector from~\cite {li2022vitdet} whose input (denoted in the dashed region) are multi-scale features. \textbf {Middle:} State-of-the-art end-to-end detectors~\citep {nguyen2022boxer,cheng2022mask2former} utilize a hierarchical backbone (\ie , Swin~\citep {liu2021swintransformer}) to create multi-scale inputs. \textbf {Right:} Our simple single-scale detector following the end-to-end framework. Where existing detectors require feature pyramids to be effective, we propose a plain detector, \ours , whose backbone and detection head operate on a single-scale feature map. Using only single-scale input, \ours achieves on par or even better performance compared to multi-scale counterparts while being more efficient. \relax }{figure.caption.2}{}}
+\newlabel{fig:compare@cref}{{[figure][2][]2}{[1][3][]4}}
+\citation{he2022mae}
+\citation{peng2022beitv2}
+\citation{he2022mae,zhai2022scalingvit,dehghani2023scalingvit22b}
+\citation{kirillov2019panoptic}
+\citation{cheng2022mask2former}
+\citation{cheng2022mask2former}
+\citation{nguyen2022boxer}
+\citation{cheng2022mask2former}
+\citation{lin2014mscoco}
+\citation{he2022mae}
+\citation{nguyen2022boxer}
+\citation{loshchilov2019adamw}
+\citation{dosovitskiy2021vit}
+\citation{shiasi2021lsjitter}
+\citation{nguyen2022boxer}
+\citation{li2022vitdet}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{5}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{5}{Experiments}{section.4}{}}
+\newlabel{sec:experiments@cref}{{[section][4][]4}{[1][5][]5}}
+\citation{zhu2021deformable}
+\citation{li2022vitdet}
+\citation{li2022vitdet}
+\citation{li2022vitdet}
+\citation{li2022vitdet}
+\citation{li2022vitdet}
+\citation{nguyen2022boxer}
+\citation{zhu2021deformable,cheng2022mask2former}
+\citation{chen2022uvit}
+\citation{nguyen2022boxer}
+\citation{nguyen2022boxer}
+\citation{nguyen2022boxer}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces \textbf  {SimPLR\xspace  is an effective single-scale detector.} All methods use ViT-B as backbone. Both ViTDet and BoxeR employ SimpleFPN with ViT from \cite  {li2022vitdet}. Our single-scale detector, SimPLR\xspace  , shows competitive performance compared to multi-scale alternatives, while being more efficient in terms of FLOPs and faster during inference. Notably, SimPLR\xspace  can reach 25 frames-per-second with jit optimization.\relax }}{6}{table.caption.3}\protected@file@percent }
+\newlabel{tab:compare}{{1}{6}{\textbf {\ours is an effective single-scale detector.} All methods use ViT-B as backbone. Both ViTDet and BoxeR employ SimpleFPN with ViT from \cite {li2022vitdet}. Our single-scale detector, \ours , shows competitive performance compared to multi-scale alternatives, while being more efficient in terms of FLOPs and faster during inference. Notably, \ours can reach 25 frames-per-second with jit optimization.\relax }{table.caption.3}{}}
+\newlabel{tab:compare@cref}{{[table][1][]1}{[1][6][]6}}
+\citation{he2022mae}
+\citation{peng2022beitv2}
+\citation{cheng2022mask2former}
+\citation{liu2021swintransformer}
+\citation{fan2021mvit}
+\newlabel{tab:strat}{{2a}{7}{Subtable 2a}{subtable.2.1}{}}
+\newlabel{sub@tab:strat}{{(a)}{a}{Subtable 2a\relax }{subtable.2.1}{}}
+\newlabel{tab:strat@cref}{{[subtable][1][2]2a}{[1][6][]7}}
+\newlabel{tab:window_size}{{2b}{7}{Subtable 2b}{subtable.2.2}{}}
+\newlabel{sub@tab:window_size}{{(b)}{b}{Subtable 2b\relax }{subtable.2.2}{}}
+\newlabel{tab:window_size@cref}{{[subtable][2][2]2b}{[1][6][]7}}
+\newlabel{tab:num_scale}{{2c}{7}{Subtable 2c}{subtable.2.3}{}}
+\newlabel{sub@tab:num_scale}{{(c)}{c}{Subtable 2c\relax }{subtable.2.3}{}}
+\newlabel{tab:num_scale@cref}{{[subtable][3][2]2c}{[1][6][]7}}
+\newlabel{tab:feat_scale}{{2d}{7}{Subtable 2d}{subtable.2.4}{}}
+\newlabel{sub@tab:feat_scale}{{(d)}{d}{Subtable 2d\relax }{subtable.2.4}{}}
+\newlabel{tab:feat_scale@cref}{{[subtable][4][2]2d}{[1][6][]7}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces  \textbf  {Ablation of scale-aware attention} in SimPLR\xspace  using a plain ViT backbone on COCO\nobreakspace  {}{\texttt  {val}}\xspace  . \textbf  {Table (a-d):} Compared to the na\"ive baseline, which employs BoxeR and box-attention \citep  {nguyen2022boxer} with \textit  {single-scale} features, our plain detector, SimPLR\xspace  , with scale-aware attention improves the performance consistently for all settings, best one highlighted. \textbf  {Figure e:} our adaptive-scale attention captures different scale distribution in its attention heads based on the context of query vectors. Specifically, queries of \emph  {small} objects tends to focus on reference windows of small scales (\emph  {i.e}\onedot  , mainly \(32\times 32\)), while query vectors of \emph  {medium} and \emph  {large} objects distribute more attention computation into larger reference windows.\relax }}{7}{table.caption.4}\protected@file@percent }
+\newlabel{fig:attn_vis}{{2e}{7}{Subtable 2e}{subtable.2.5}{}}
+\newlabel{sub@fig:attn_vis}{{(e)}{e}{Subtable 2e\relax }{subtable.2.5}{}}
+\newlabel{fig:attn_vis@cref}{{[subtable][5][2]2e}{[1][6][]7}}
+\@writefile{lot}{\contentsline {subtable}{\numberline{(a)}{\ignorespaces { \textbf {Scale-aware attention.}}}}{7}{subtable.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {subtable}{\numberline{(b)}{\ignorespaces { \textbf {Window size.}}}}{7}{subtable.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {subtable}{\numberline{(c)}{\ignorespaces { \textbf {Number of window scales}.}}}{7}{subtable.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {subtable}{\numberline{(d)}{\ignorespaces { \textbf {Scales of input features.}}}}{7}{subtable.2.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {subtable}{\numberline{(e)}{\ignorespaces { Visualization of scale distribution learnt in \textbf {multi-head adaptive-scale attention} of object proposals. Objects are classified into \emph {small}, \emph {medium}, and \emph {large} based on their area.}}}{7}{subtable.2.5}\protected@file@percent }
+\newlabel{tab:det_ablation}{{2}{7}{\textbf {Ablation of scale-aware attention} in \ours using a plain ViT backbone on COCO~\val . \textbf {Table (a-d):} Compared to the na\"ive baseline, which employs BoxeR and box-attention \citep {nguyen2022boxer} with \textit {single-scale} features, our plain detector, \ours , with scale-aware attention improves the performance consistently for all settings, best one highlighted. \textbf {Figure e:} our adaptive-scale attention captures different scale distribution in its attention heads based on the context of query vectors. Specifically, queries of \emph {small} objects tends to focus on reference windows of small scales (\ie , mainly \(32\times 32\)), while query vectors of \emph {medium} and \emph {large} objects distribute more attention computation into larger reference windows.\relax }{table.caption.4}{}}
+\newlabel{tab:det_ablation@cref}{{[table][2][]2}{[1][6][]7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Qualitative results} for object detection, segmentation and panoptic segmentation on COCO {\texttt  {val}}\xspace  as generated by SimPLR\xspace  with ViT-B backbone. SimPLR\xspace  can detect and segment objects in crowded scenes.\relax }}{7}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:vis}{{3}{7}{\textbf {Qualitative results} for object detection, segmentation and panoptic segmentation on COCO \val as generated by \ours with ViT-B backbone. \ours can detect and segment objects in crowded scenes.\relax }{figure.caption.5}{}}
+\newlabel{fig:vis@cref}{{[figure][3][]3}{[1][7][]7}}
+\citation{lin2014mscoco}
+\citation{lin2014mscoco}
+\citation{girshick2014rcnn}
+\citation{lecun95convolutional}
+\citation{deng2009imagenet}
+\citation{simonyan2015vgg,xie2017resnext,kaiming2016resnet,huang2017densenet}
+\citation{brown2020gpt3,devlin2019bert}
+\citation{chen2020igpt,dosovitskiy2021vit}
+\citation{chen2020simclr,he2022mae}
+\citation{dosovitskiy2021vit}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces \textbf  { State-of-the-art comparison and scaling behavior for object detection and instance segmentation.} We compare between methods using feature pyramids (\emph  {top} row) \emph  {vs}\onedot  single-scale (\emph  {bottom} row) on COCO\nobreakspace  {}\citep  {lin2014mscoco} {\texttt  {val}}\xspace  . Backbones with MAE pre-trained on ImageNet-1K while others pre-trained on ImageNet-22K. Methods in \textcolor {gray}{gray color} are with convolution-based detection head. (n/a: entry is not available; BEiTv2 uses intermediate finetuning with ImageNet-22K). Models of larger sizes are with \emph  {darker} \textcolor {orange}{orange color}. SimPLR\xspace  indicates good scaling behavior. With only single-scale features, SimPLR\xspace  shows strong performance compared to multi-scale detectors including transformer-based detectors like Mask2Former, while being faster.\relax }}{8}{table.caption.6}\protected@file@percent }
+\newlabel{tab:det_main}{{3}{8}{\textbf { State-of-the-art comparison and scaling behavior for object detection and instance segmentation.} We compare between methods using feature pyramids (\emph {top} row) \vs single-scale (\emph {bottom} row) on COCO~\citep {lin2014mscoco} \val . Backbones with MAE pre-trained on ImageNet-1K while others pre-trained on ImageNet-22K. Methods in \textcolor {gray}{gray color} are with convolution-based detection head. (n/a: entry is not available; BEiTv2 uses intermediate finetuning with ImageNet-22K). Models of larger sizes are with \emph {darker} \textcolor {orange}{orange color}. \ours indicates good scaling behavior. With only single-scale features, \ours shows strong performance compared to multi-scale detectors including transformer-based detectors like Mask2Former, while being faster.\relax }{table.caption.6}{}}
+\newlabel{tab:det_main@cref}{{[table][3][]3}{[1][8][]8}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces \textbf  {State-of-the-art comparison and scaling behavior for panoptic segmentation.} We compare between methods using feature pyramids (\emph  {top} row) \emph  {vs}\onedot  single-scale (\emph  {bottom} row) on COCO\nobreakspace  {}{\texttt  {val}}\xspace  . All backbones are pre-trained on ImageNet-22K. Models of larger sizes are with \emph  {darker} \textcolor {orange}{orange color}. SimPLR\xspace  shows better results when scaling to larger backbones, while being faster with single-scale input.\relax }}{8}{table.caption.7}\protected@file@percent }
+\newlabel{tab:panoptic}{{4}{8}{\textbf {State-of-the-art comparison and scaling behavior for panoptic segmentation.} We compare between methods using feature pyramids (\emph {top} row) \vs single-scale (\emph {bottom} row) on COCO~\val . All backbones are pre-trained on ImageNet-22K. Models of larger sizes are with \emph {darker} \textcolor {orange}{orange color}. \ours shows better results when scaling to larger backbones, while being faster with single-scale input.\relax }{table.caption.7}{}}
+\newlabel{tab:panoptic@cref}{{[table][4][]4}{[1][8][]8}}
+\citation{sermanet2014overfeat}
+\citation{uijlings2013selective}
+\citation{girshick2014rcnn}
+\citation{ren2015faster_rcnn}
+\citation{wei2016ssd}
+\citation{tsung2017fpn}
+\citation{nicolas2020detr}
+\citation{dong2021solq,wang2021maxdeeplab,nguyen2022boxer}
+\citation{cheng2021maskformer}
+\citation{zhang2021knet}
+\citation{cheng2022mask2former}
+\citation{yu2022kmmask}
+\citation{zhang2023dino,li2023maskdino}
+\bibdata{simplr}
+\bibcite{bao2022beit}{{1}{2022}{{Bao et~al.}}{{Bao, Dong, Piao, and Wei}}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Related Work}{9}{section.5}\protected@file@percent }
+\newlabel{sec:related_work}{{5}{9}{Related Work}{section.5}{}}
+\newlabel{sec:related_work@cref}{{[section][5][]5}{[1][8][]9}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{9}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{6}{9}{Conclusion}{section.6}{}}
+\newlabel{sec:conclusion@cref}{{[section][6][]6}{[1][9][]9}}
+\bibcite{brown2020gpt3}{{2}{2020}{{Brown et~al.}}{{Brown, Mann, Ryder, Subbiah, Kaplan, Dhariwal, Neelakantan, Shyam, Sastry, Amanda~Askell, Herbert-Voss, Krueger, Henighan, Child, Ramesh, Ziegler, Wu, Winter, Hesse, Chen, Sigler, Litwin, Gray, Chess, Clark, Berner, McCandlish, Radford, Sutskever, and Amodei}}}
+\bibcite{nicolas2020detr}{{3}{2020}{{Carion et~al.}}{{Carion, Massa, Synnaeve, Usunier, Kirillov, and Zagoruyko}}}
+\bibcite{chen2020igpt}{{4}{2020{a}}{{Chen et~al.}}{{Chen, Radford, Child, Wu, Jun, Dhariwal, Luan, and Sutskever}}}
+\bibcite{chen2020simclr}{{5}{2020{b}}{{Chen et~al.}}{{Chen, Kornblith, Norouzi, and Hinton}}}
+\bibcite{chen2022uvit}{{6}{2022}{{Chen et~al.}}{{Chen, Du, Yang, Beyer, Zhai, Lin, Chen, Li, Song, Wang, and Zhou}}}
+\bibcite{cheng2021maskformer}{{7}{2021}{{Cheng et~al.}}{{Cheng, Schwing, and Kirillov}}}
+\bibcite{cheng2022mask2former}{{8}{2022}{{Cheng et~al.}}{{Cheng, Misra, Schwing, Kirillov, and Girdhar}}}
+\bibcite{dehghani2023scalingvit22b}{{9}{2023}{{Dehghani et~al.}}{{Dehghani, Djolonga, Mustafa, and et~al.}}}
+\bibcite{deng2009imagenet}{{10}{2009}{{Deng et~al.}}{{Deng, Dong, Socher, Li, Li, and Fei-Fei}}}
+\bibcite{devlin2019bert}{{11}{2019}{{Devlin et~al.}}{{Devlin, Chang, Lee, and Toutanova}}}
+\bibcite{dong2021solq}{{12}{2021}{{Dong et~al.}}{{Dong, Zeng, Wang, Zhang, and Wei}}}
+\bibcite{dosovitskiy2021vit}{{13}{2021}{{Dosovitskiy et~al.}}{{Dosovitskiy, Beyer, Kolesnikov, Weissenborn, Zhai, Unterthiner, Dehghani, Minderer, Heigold, Gelly, Uszkoreit, and Houlsby}}}
+\bibcite{fan2021mvit}{{14}{2021}{{Fan et~al.}}{{Fan, Xiong, Mangalam, Li, Yan, Malik, and Feichtenhofer}}}
+\bibcite{shiasi2021lsjitter}{{15}{2021}{{Ghiasi et~al.}}{{Ghiasi, Cui, Srinivas, Qian, Lin, Cubuk, Le, and Zoph}}}
+\bibcite{girshick2014rcnn}{{16}{2014}{{Girshick et~al.}}{{Girshick, Donahue, Darrell, and Malik}}}
+\bibcite{kaiming2016resnet}{{17}{2016}{{He et~al.}}{{He, Zhang, Ren, and Sun}}}
+\bibcite{he2017maskrcnn}{{18}{2017}{{He et~al.}}{{He, Gkioxari, Dollár, and Girshick}}}
+\bibcite{he2022mae}{{19}{2022}{{He et~al.}}{{He, Chen, Xie, Li, Doll{\'a}r, and Girshick}}}
+\bibcite{heo2021rethinkingvit}{{20}{2021}{{Heo et~al.}}{{Heo, Yun, Han, Chun, Choe, and Oh}}}
+\bibcite{huang2017densenet}{{21}{2017}{{Huang et~al.}}{{Huang, Liu, van~der Maaten, and Weinberger}}}
+\bibcite{kirillov2019panoptic}{{22}{2019}{{Kirillov et~al.}}{{Kirillov, He, Girshick, Rother, and Dollar}}}
+\bibcite{lecun95convolutional}{{23}{1995}{{LeCun \& Bengio}}{{LeCun and Bengio}}}
+\bibcite{li2023maskdino}{{24}{2023}{{Li et~al.}}{{Li, Zhang, xu, Liu, Zhang, Ni, and Shum}}}
+\bibcite{li2022vitdet}{{25}{2022}{{Li et~al.}}{{Li, Mao, Girshick, and He}}}
+\bibcite{lin2014mscoco}{{26}{2014}{{Lin et~al.}}{{Lin, Maire, Belongie, Bourdev, Girshick, Hays, Perona, Ramanan, Doll{\'{a}}r, and Zitnick}}}
+\bibcite{tsung2017fpn}{{27}{2017}{{{Lin} et~al.}}{{{Lin}, {Dollár}, {Girshick}, {He}, {Hariharan}, and {Belongie}}}}
+\bibcite{wei2016ssd}{{28}{2016}{{Liu et~al.}}{{Liu, Anguelov, Erhan, Szegedy, Reed, Fu, and Berg}}}
+\bibcite{liu2021swintransformer}{{29}{2021}{{Liu et~al.}}{{Liu, Lin, Cao, Hu, Wei, Zhang, Lin, and Guo}}}
+\bibcite{loshchilov2019adamw}{{30}{2019}{{Loshchilov \& Hutter}}{{Loshchilov and Hutter}}}
+\bibcite{nguyen2022boxer}{{31}{2022}{{Nguyen et~al.}}{{Nguyen, Ju, Booij, Oswald, and Snoek}}}
+\bibcite{peng2022beitv2}{{32}{2022}{{Peng et~al.}}{{Peng, Dong, Bao, Ye, and Wei}}}
+\bibcite{ren2015faster_rcnn}{{33}{2015}{{Ren et~al.}}{{Ren, He, Girshick, and Sun}}}
+\bibcite{sermanet2014overfeat}{{34}{2014}{{Sermanet et~al.}}{{Sermanet, Eigen, Zhang, Mathieu, Fergus, and LeCun}}}
+\bibcite{simonyan2015vgg}{{35}{2015}{{Simonyan \& Zisserman}}{{Simonyan and Zisserman}}}
+\bibcite{uijlings2013selective}{{36}{2013}{{Uijlings et~al.}}{{Uijlings, van~de Sande, Gevers, and Smeulders}}}
+\bibcite{vaswani2017transformer}{{37}{2017}{{Vaswani et~al.}}{{Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, and Polosukhin}}}
+\bibcite{wang2021maxdeeplab}{{38}{2021{a}}{{Wang et~al.}}{{Wang, Zhu, Adam, Yuille, and Chen}}}
+\bibcite{wang2021pvit}{{39}{2021{b}}{{Wang et~al.}}{{Wang, Xie, Li, Fan, Song, Liang, Lu, Luo, and Shao}}}
+\bibcite{xie2017resnext}{{40}{2017}{{Xie et~al.}}{{Xie, Girshick, Doll{\'{a}}r, Tu, and He}}}
+\bibcite{yu2022kmmask}{{41}{2022}{{Yu et~al.}}{{Yu, Wang, Qiao, Collins, Zhu, Adam, Yuille, and Chen}}}
+\bibcite{zhai2022scalingvit}{{42}{2022}{{Zhai et~al.}}{{Zhai, Kolesnikov, Houlsby, and Beyer}}}
+\bibcite{zhang2023dino}{{43}{2023}{{Zhang et~al.}}{{Zhang, Li, Liu, Zhang, Su, Zhu, Ni, and Shum}}}
+\bibcite{zhang2021knet}{{44}{2021}{{Zhang et~al.}}{{Zhang, Pang, Chen, and Loy}}}
+\bibcite{zhu2021deformable}{{45}{2021}{{Zhu et~al.}}{{Zhu, Su, Lu, Li, Wang, and Dai}}}
+\bibstyle{iclr2024_conference}
+\gdef \@abspage@last{12}

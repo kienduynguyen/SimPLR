@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2023)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: simplr_arxiv.aux
+The style file: iclr2024_conference.bst
+Database file #1: simplr.bib
+You've used 51 entries,
+            2773 wiz_defined-function locations,
+            774 strings with 13879 characters,
+and the built_in function-call counts, 30246 in all, are:
+= -- 2211
+> -- 2889
+< -- 5
++ -- 965
+- -- 912
+* -- 2692
+:= -- 4802
+add.period$ -- 153
+call.type$ -- 51
+change.case$ -- 456
+chr.to.int$ -- 49
+cite$ -- 102
+duplicate$ -- 1215
+empty$ -- 2066
+format.name$ -- 971
+if$ -- 6167
+int.to.chr$ -- 3
+int.to.str$ -- 1
+missing$ -- 52
+newline$ -- 263
+num.names$ -- 204
+pop$ -- 1104
+preamble$ -- 1
+purify$ -- 406
+quote$ -- 0
+skip$ -- 928
+stack$ -- 0
+substring$ -- 134
+swap$ -- 111
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 556
+warning$ -- 0
+while$ -- 156
+width$ -- 0
+write$ -- 620

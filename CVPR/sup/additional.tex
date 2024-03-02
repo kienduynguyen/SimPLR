@@ -1,0 +1,62 @@
+
+  
+\section{Additional Results}
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    % \floatbox[{\capbeside\thisfloatsetup{capbesideposition={top,right}}}]{table}[\FBwidth]
+    {
+    \tablestyle{4.5pt}{1.2}
+    \begin{tabular}{lcccccc}
+    \multicolumn{1}{l|}{\multirow{2}{*}{method}} & \multirow{2}{*}{backbone} & \multicolumn{1}{c|}{\multirow{2}{*}{pre-train}} & \multicolumn{3}{c|}{Panoptic Segmentation} & \multirow{2}{*}{FPS} \\
+    \multicolumn{1}{l|}{} &  & \multicolumn{1}{c|}{} & PQ & PQ$^\text{th}$ & \multicolumn{1}{c|}{PQ$^\text{st}$} & \\
+    \shline
+    \multicolumn{1}{l|}{MaskFormer} & Swin-B & \multicolumn{1}{c|}{sup-1K} & 51.1 & 56.3 & \multicolumn{1}{c|}{43.2} & - \\
+    \multicolumn{1}{l|}{Mask2Former} & Swin-B & \multicolumn{1}{c|}{sup-1K} & 55.1 & 61.0 & \multicolumn{1}{c|}{46.1} & - \\
+    \hline
+    \multicolumn{1}{l|}{\ours} & ViT-B & \multicolumn{1}{c|}{sup-1K} & \textbf{55.2} & \textbf{61.2} & \multicolumn{1}{c|}{\textbf{46.2}} & \textbf{13} \\
+    \end{tabular}
+    }
+    {
+        \caption{\textbf{More panoptic segmentation comparison} between \ours with ViT-B backbone and other methods with Swin-B backbone. All backbones are pre-trained on ImageNet-1K with supervised pre-training. \ours still shows competitive results when using only single-scale input.}\label{tab:more_panop}
+    }%
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table*}[t!]
+    \centering
+    \footnotesize
+    {
+    \tablestyle{7pt}{1.2}
+    \begin{tabular}{l|cccc|cccc}
+    \multirow{2}{*}{pre-train} & \multicolumn{4}{c|}{Object Detection} & \multicolumn{4}{c}{Instance Segmentation} \\
+    & AP$^\text{b}$ & AP$^\text{b}_\text{S}$ & AP$^\text{b}_\text{M}$ & AP$^\text{b}_\text{L}$ & $\text{AP}^\text{m}$ & $\text{AP}^\text{m}_\text{S}$ & $\text{AP}^\text{m}_\text{M}$ & $\text{AP}^\text{m}_\text{L}$ \\
+    % \hshline
+    % (dynamic)  & \cmark & \xmark & \cmark & \xmark & \cmark & \xmark & \cmark \\
+    \shline
+    IN-1K, DEiT & 53.6 & 33.7 & 58.1 & 71.5 & 46.1 & 24.5 & 50.4 & 67.2 \\
+    IN-1K, DEiTv3 & 54.0 & 34.3 & 58.8 & 70.5 & 46.4 & 24.8 & 51.1 & 66.7 \\
+    IN-21K, DEiTv3 & 54.8 & 35.4 & 59.0 & {\bf 72.4} & 47.1 & 25.8 & 51.2 & {\bf 68.5} \\
+    \hline
+    IN-1K, MAE & {\bf 55.4} & {\bf 36.1} & {\bf 59.1} & 70.9 & {\bf 47.6} & {\bf 26.8} & {\bf 51.4} & 67.1 \\
+    % IN-21K, BEiTv2 & {\bf 55.7} & {\bf 36.5} & {\bf 60.2} & {\bf 72.3} & {\bf 48.1} & {\bf 26.7} & {\bf 52.7} & {\bf 68.9} \\
+    % ************************************
+    \end{tabular}
+    }
+    % \vspace{-0.1in}
+    % \vspace{-0.5em}
+    \caption{
+        \textbf{Ablation on pre-training strategies} of the plain ViT backbone using \ours evaluated on COCO object detection and instance segmentation. We compare the ViT backbone pre-trained using supervised methods (\emph{top} row) \vs self-supervised methods (\emph{bottom} row) with different sizes of pre-training dataset (ImageNet-1K \vs ImageNet-21K). Here, we use the $5\times$ schedule as in \cite{nguyen2022boxer}. It can be seen that \ours with the plain ViT backbone benefits from better pre-training approaches and with more pre-training data.
+    }\label{tab:pretrain}
+    % \vspace{-0.2in}
+\end{table*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+  \boldparagraph{More panoptic segmentation comparison.} Here, we provide more results of \ours with ViT-B backbone and other methods with Swin-B backbone using supervised pre-training on COCO panoptic segmentation in \cref{tab:more_panop}. \ours continues to show strong segmentation performance when using only single-scale input.
+  
+  \boldparagraph{Ablation on pre-training strategies.} \cref{tab:pretrain} compares the ViT backbone when pre-trained using different strategies with different sizes of pre-training data. \ours with the ViT backbone benefits from better pre-training methods even with supervised approaches. Among supervised pre-training methods, DEiTv3~\citep{touvron2022deit3} shows better results than DEiT~\citep{touvron2021deit}, and the pre-training on ImageNet-21K further improves the performance of DEiTv3.
+  
+  However, self-supervised methods like MAE~\citep{he2022mae} provides strong pre-trained backbones when only pre-trained on ImageNet-1K. This further confirms that our plain detector, \ours, enjoys the significant progress of self-supervised learning and scaling ViTs. A similar observation is also pointed out in ViTDet~\citep{li2022vitdet} where the plain ViT backbone initialized with MAE shows better improvement over hierarchical backbones.
+  
+  
