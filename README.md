@@ -41,11 +41,11 @@ If you find SimPLR useful in your research, please consider citing:
 
     We recommend you to use Anaconda to create a conda environment:
     ```bash
-    conda create -n boxer python=3.8
+    conda create -n simplr python=3.8
     ```
     Then, activate the environment:
     ```bash
-    conda activate boxer
+    conda activate simplr
     ```
   
 * PyTorch>=2.0, torchvision>=0.11.2 (following instructions [here](https://pytorch.org/))
@@ -89,7 +89,7 @@ You can download ```coco_categories.txt``` [here](https).
 ### Training
 Our script is able to automatically detect the number of available gpus on a single node.
 It works best with Slurm system when it can auto-detect the number of available gpus along with nodes.
-The command for training BoxeR is simple as following:
+The command for training SimPLR is simple as following:
 
 ```bash
 python tools/run.py --config ${CONFIG_PATH} --model ${MODEL_TYPE} --task ${TASK_TYPE}
