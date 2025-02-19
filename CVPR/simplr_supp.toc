@@ -1,4 +1,0 @@
-\contentsline {section}{\numberline {A}\hskip -1em.\nobreakspace {}Implementation Details}{1}{appendix.A}%
-\contentsline {section}{\numberline {B}\hskip -1em.\nobreakspace {}Additional Results}{2}{appendix.B}%
-\contentsline {section}{\numberline {C}\hskip -1em.\nobreakspace {}Qualitative results}{3}{appendix.C}%
-\contentsline {section}{\numberline {D}\hskip -1em.\nobreakspace {}Asset Licenses}{3}{appendix.D}%

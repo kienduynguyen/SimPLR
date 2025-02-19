@@ -1,0 +1,58 @@
+includes:
+  - config/base_simplr_vit_detection.yaml
+
+dataset_config:
+  detection:
+    use_mask: true
+
+loss:
+  params:
+    mask_loss_coef: 5
+    dice_loss_coef: 5
+
+model_config:
+  boxer2d_vit:
+    backbone:
+      ms_params:
+        scale_factors:
+          - 1.0
+        out_features:
+          - s1
+      params:
+        window_block_indexes:
+          - 0
+          - 1
+          - 3
+          - 4
+          - 6
+          - 7
+          - 9
+          - 10
+    transformer:
+      type: box_transformer_v2
+      params:
+        nlevel: 1
+        nhead: 8
+        ref_size_ratios:
+          - 1
+          - 2
+          - 4
+          - 8
+          
+scheduler:
+  type: multi_step
+  params:
+    use_warmup: true
+    mode: iter
+    lr_ratio: 0.1
+    lr_steps:
+      - 327778
+      - 355092
+    warmup_iterations: 250
+    warmup_factor: 0.001
+
+training:
+  max_update: 368750
+  iou_type:
+    - bbox
+    - segm

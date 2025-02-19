@@ -1,0 +1,176 @@
+dataset_config:
+  detection:
+    image_size:
+      train: 1024
+      val: 1024
+      test: 1024
+    use_mask: false
+    cache_mode: false
+    sampler: infinite
+    imdb_files:
+      train:
+        anno_file: annotation/instances_train2017.json
+        image_folder: image/train2017
+      val:
+        anno_file: annotation/instances_val2017.json
+        image_folder: image/val2017
+    processors:
+      answer_processor:
+        type: answer
+        params:
+          class_file: vocabs/coco_categories.txt
+      image_train_processor:
+        type: compose
+        params:
+          preprocessors:
+            - type: random_horizontal_flip
+              params:
+                prob: 0.5
+            - type: resize_scale
+              params:
+                min_scale: 0.1
+                max_scale: 2.0
+                image_size: 1024
+            - type: random_size_crop_v2
+              params:
+                image_size: 1024
+                recompute_boxes: true
+            - type: to_tensor
+              params: {}
+            - type: normalize
+              params:
+                mean:
+                  - 0.485
+                  - 0.456
+                  - 0.406
+                std:
+                  - 0.229
+                  - 0.224
+                  - 0.225
+      image_test_processor:
+        type: compose
+        params:
+          preprocessors:
+            - type: random_resize
+              params:
+                max_size: 1024
+                min_size: 1024
+            - type: to_tensor
+              params: {}
+            - type: normalize
+              params:
+                mean:
+                  - 0.485
+                  - 0.456
+                  - 0.406
+                std:
+                  - 0.229
+                  - 0.224
+                  - 0.225
+
+loss:
+  type: boxer2d
+  params:
+    bbox_loss_coef: 5
+    giou_loss_coef: 2
+    class_loss_coef: 2
+    use_mask: ${dataset_config.detection.use_mask}
+    instance_mask: ${model_config.simplr.instance_mask}
+    matcher:
+      type: hungarian
+      params:
+        cost_class: ${loss.params.class_loss_coef}
+        cost_bbox: ${loss.params.bbox_loss_coef}
+        cost_giou: ${loss.params.giou_loss_coef}
+        loss_mode: focal
+        
+metric:
+  - type: accuracy
+    params: {}
+
+model_config:
+  simplr:
+    enc_dim: 256
+    dec_dim: 256
+    aux_loss: true
+    deform_lr_multi: 0.1
+    ref_size: 4
+    instance_mask: 14
+    backbone:
+      ms_type: vit_up_fist_up1
+      ms_params:
+        out_features:
+          - s1
+          - s2
+          - s3
+          - s4
+        upscale: 2.0
+        scale_factors:
+          - 1.0
+          - 0.5
+          - 0.25
+          - 0.125
+        mode: avg
+        norm: GN
+        position_encoding: fixed_box
+        hidden_dim: ${model_config.simplr.enc_dim}
+        use_feat: false
+      arch: mae_base_patch16
+      params:
+        pretrained: true
+        pretrained_path: null
+        img_size: 1024
+        drop_path_rate: 0.1
+        use_rel_pos: true
+        window_size: 14
+        window_block_indexes: 12
+        enc_norm: true
+        out_feature: s1
+        checkpoint_layer: -1
+    transformer:
+      type: simplr_transformer
+      params:
+        enc_dim: ${model_config.simplr.enc_dim}
+        dec_dim: ${model_config.simplr.dec_dim}
+        nhead: 8
+        nlevel: 4
+        enc_layers: 6
+        dec_layers: 6
+        dim_feedforward_ratio: 4
+        dropout: 0
+        activation: gelu
+        num_queries: 300
+        use_mask: ${dataset_config.detection.use_mask}
+        ref_size: ${model_config.simplr.ref_size}
+        instance_mask: ${model_config.simplr.instance_mask}
+        residual_mode: v2
+        loss_mode: ${loss.params.matcher.params.loss_mode}
+        prenorm: false
+        dn_num: 100
+        noise_scale: 0.4
+
+optimizer:
+  type: adamw
+  params:
+    lr: 0.0001
+    lr_backbone: 0.0001
+    lr_decay_rate: 0.7
+    use_oss: false
+    weight_decay: 0.05
+    eps: 1.0e-08
+    betas:
+      - 0.9
+      - 0.999
+
+training:
+  batch_size: 16
+  iter_per_update: 1
+  find_unused_parameters: false
+  tensorboard: false
+  evaluation_interval: 5
+  checkpoint_interval: 1
+  log_interval: 200
+  max_norm: 0.01
+  run_type: train_val
+  iou_type:
+    - bbox
