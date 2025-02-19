@@ -24,7 +24,7 @@ If you find SimPLR useful in your research, please consider citing:
 ```bibtex
 @article{nguyen2025simplr,
   title={SimPLR: A Simple and Plain Transformer for Efficient Object Detection and Segmentation},
-  author={Duy{-}Kien Nguyen and Jihong Ju and Olaf Booij and Martin R. Oswald and Cees G. M. Snoek},
+  author={Duy{-}Kien Nguyen and Martin R. Oswald and Cees G. M. Snoek},
   journal={arXiv preprint arXiv:2310.05920},
   year={2025}
 }
