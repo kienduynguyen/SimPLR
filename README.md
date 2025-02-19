@@ -1,4 +1,4 @@
-# BoxeR
+# SimPLR
 
 By [Duy-Kien Nguyen](https://scholar.google.com/citations?user=welhhBIAAAAJ&hl=en), Jihong Ju, Olaf Booij, [Martin R. Oswald](https://scholar.google.de/citations?user=biytQP8AAAAJ&hl=en), [Cees Snoek](https://www.ceessnoek.info/).
 
@@ -19,8 +19,8 @@ We also provide the implementation of a strong baseline, DeformableDETR + ViT in
 This project is released under the [Apache 2.0 license](./LICENSE).
 
 
-## Citing BoxeR
-If you find BoxeR useful in your research, please consider citing:
+## Citing SimPLR
+If you find SimPLR useful in your research, please consider citing:
 ```bibtex
 @article{nguyen2025simplr,
   title={SimPLR: A Simple and Plain Transformer for Efficient Object Detection and Segmentation},
