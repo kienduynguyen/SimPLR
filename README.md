@@ -1,6 +1,6 @@
 # SimPLR
 
-By [Duy-Kien Nguyen](https://scholar.google.com/citations?user=welhhBIAAAAJ&hl=en), Jihong Ju, Olaf Booij, [Martin R. Oswald](https://scholar.google.de/citations?user=biytQP8AAAAJ&hl=en), [Cees Snoek](https://www.ceessnoek.info/).
+By [Duy-Kien Nguyen](https://scholar.google.com/citations?user=welhhBIAAAAJ&hl=en), [Martin R. Oswald](https://scholar.google.de/citations?user=biytQP8AAAAJ&hl=en), [Cees Snoek](https://www.ceessnoek.info/).
 
 This repository is an official implementation of the paper [SimPLR: A Simple and Plain Transformer for Scaling-Efficient Object Detection and Segmentation](https://openreview.net/forum?id=6LO1y8ZE0F).
 
