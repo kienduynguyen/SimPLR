@@ -23,7 +23,7 @@ class SimPLR(BaseDetectionModel):
         backbone_groups = get_vit_parameters(
             self.backbone,
             lr_decay_rate=lr_decay_rate,
-            wd_norm=0.0,
+            apply_wd=False,
             wd_except=["pos_embed"],
             num_layers=self.backbone.net.depth,
         )
@@ -32,7 +32,7 @@ class SimPLR(BaseDetectionModel):
             self,
             lr_multi=self.deform_lr_multi,
             lr_module=["linear_box", "normalizer"],
-            wd_norm=0.0,
+            apply_wd=True,
             module_except=["backbone"],
         )
 

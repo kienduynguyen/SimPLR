@@ -58,7 +58,7 @@ class BaseEngine:
     def _backward(self, output):
         loss = output["losses"]
 
-        if self.trainer.use_fp16:
+        if self.trainer.grad_scaler is not None:
             self.trainer.grad_scaler.scale(loss).backward()
         else:
             loss.backward()
@@ -66,14 +66,14 @@ class BaseEngine:
 
     def _step(self, current_update):
         max_norm = self.trainer.running_config.max_norm
-        if self.trainer.use_fp16:
+        if self.trainer.grad_scaler is not None:
             self.trainer.grad_scaler.unscale_(self.optimizer)
             self.trainer.profile("Unscale time")
 
         norm = clip_grad_norm(self.params, max_norm)
         self.trainer.profile("Clip grad time")
 
-        if self.trainer.use_fp16:
+        if self.trainer.grad_scaler is not None:
             self.trainer.grad_scaler.step(self.optimizer)
             self.trainer.profile("Step time")
             self.trainer.grad_scaler.update()

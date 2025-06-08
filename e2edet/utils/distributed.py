@@ -1,11 +1,21 @@
+# ------------------------------------------------------------------------
+# BoxeR
+# Copyright (c) 2022. All Rights Reserved.
+# Licensed under the MIT License [see LICENSE for details]
+# ------------------------------------------------------------------------
+# Modified from mmf (https://github.com/facebookresearch/mmf)
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+# ------------------------------------------------------------------------
 import os
 import numpy as np
 import socket
 import subprocess
 import warnings
-import functools
+import datetime
+from functools import lru_cache
 
 import torch
+import torch.distributed.nn
 from torch import distributed as dist
 
 
@@ -28,12 +38,12 @@ def synchronize():
         dist.barrier()
 
 
-def shared_random_seed():
-    seed = np.random.randint(2**31)
-    all_seeds = all_gather(seed)
+@lru_cache
+def get_data_world_size():
+    global_world_size = get_world_size()
 
-    return all_seeds[0]
-    
+    return int(os.environ.get("DATA_WORLD_SIZE", global_world_size))
+
 
 def get_rank():
     if not dist.is_nccl_available():
@@ -41,6 +51,22 @@ def get_rank():
     if not dist.is_initialized():
         return 0
     return dist.get_rank()
+
+
+def get_world_size_and_rank():
+    return get_world_size(), get_rank()
+
+
+_LOCAL_RANK = None
+
+
+def get_local_rank():
+    global _LOCAL_RANK
+
+    if _LOCAL_RANK is None:
+        return 0
+
+    return _LOCAL_RANK
 
 
 def is_master():
@@ -111,6 +137,26 @@ def gather_tensor(tensor):
     return tensor_list
 
 
+def gather_features(features, gather_with_grad=False):
+    world_size = get_world_size()
+
+    if world_size < 2:
+        return features
+
+    if gather_with_grad:
+        all_features = torch.cat(torch.distributed.nn.all_gather(features), dim=0)
+    else:
+        all_features = []
+
+        for _ in range(world_size):
+            all_features.append(torch.zeros_like(features))
+
+        dist.all_gather(all_features, features)
+        all_features = torch.cat(all_features, dim=0)
+
+    return all_features
+
+
 def reduce_dict(dictionary):
     world_size = get_world_size()
     if world_size < 2:
@@ -130,18 +176,6 @@ def reduce_dict(dictionary):
     return reduced_dict
 
 
-@functools.lru_cache()
-def _get_global_gloo_group():
-    """
-    Return a process group based on gloo backend, containing all the ranks
-    The result is cached.
-    """
-    if dist.get_backend() == "nccl":
-        return dist.new_group(backend="gloo")
-    else:
-        return dist.group.WORLD
-
-
 def gather(data, dst=0, group=None):
     """
     Run gather on arbitrary picklable data (not necessarily tensors).
@@ -157,7 +191,7 @@ def gather(data, dst=0, group=None):
     if get_world_size() == 1:
         return [data]
     if group is None:
-        group = _get_global_gloo_group()
+        group = dist.group.WORLD
     world_size = dist.get_world_size(group=group)
     if world_size == 1:
         return [data]
@@ -201,9 +235,7 @@ def all_gather(data, group=None):
     if get_world_size() == 1:
         return [data]
     if group is None:
-        group = (
-            _get_global_gloo_group()
-        )  # use CPU group by default, to reduce GPU RAM usage.
+        group = dist.group.WORLD  # use CPU group by default, to reduce GPU RAM usage.
     world_size = dist.get_world_size(group)
     if world_size == 1:
         return [data]
@@ -222,7 +254,7 @@ def shared_random_seed():
         create one.
     All workers must call this function, otherwise it will deadlock.
     """
-    ints = np.random.randint(2 ** 31)
+    ints = np.random.randint(2**31)
     all_ints = all_gather(ints)
     return all_ints[0]
 
@@ -240,6 +272,26 @@ def infer_init_method(config):
         config.distributed.init_method = "env://"
         config.distributed.world_size = int(os.environ["WORLD_SIZE"])
         config.distributed.rank = int(os.environ["RANK"])
+
+    elif all(
+        key in os.environ for key in ["ARNOLD_NUM", "ARNOLD_WORKER_0_HOST", "ARNOLD_ID"]
+    ):
+        config.distributed.port = int(os.environ.get("ARNOLD_WORKER_0_PORT"))
+
+        nnodes = int(os.environ.get("ARNOLD_NUM"))
+        if nnodes == 1 and torch.cuda.device_count() == 1:
+            return
+
+        config.distributed.init_method = "tcp://[{host}]:{port}".format(
+            host=os.environ.get("ARNOLD_WORKER_0_HOST"),
+            port=config.distributed.port,
+        )
+
+        gpus_per_node = torch.cuda.device_count()
+        config.distributed.world_size = nnodes * gpus_per_node
+
+        node_id = int(os.environ.get("ARNOLD_ID"))
+        config.distributed.rank = node_id * gpus_per_node
 
     # we can determine the init method automatically for Slurm
     else:
@@ -269,7 +321,7 @@ def infer_init_method(config):
                     ntasks_per_node = int(ntasks_per_node)
                 else:
                     ntasks = int(os.environ.get("SLURM_NTASKS"))
-                    assert ntasks % nnodes == 0
+                    assert ntasks % nnodes == 0, f"ntasks: {ntasks}, nnodes: {nnodes}"
                     ntasks_per_node = int(ntasks / nnodes)
 
                 gpus_per_node = torch.cuda.device_count()
@@ -278,7 +330,9 @@ def infer_init_method(config):
                     node_id = int(os.environ.get("SLURM_NODEID"))
                     config.distributed.rank = node_id * gpus_per_node
                 else:
-                    assert gpus_per_node == ntasks_per_node
+                    assert (
+                        gpus_per_node == ntasks_per_node
+                    ), f"gpus_per_node: {gpus_per_node}, ntasks_per_node: {ntasks_per_node}"
                     config.distributed.no_spawn = True
                     config.distributed.rank = int(os.environ.get("SLURM_PROCID"))
                     config.device_id = int(os.environ.get("SLURM_LOCALID"))
@@ -288,9 +342,46 @@ def infer_init_method(config):
                 pass
 
 
+TRACE_BUFFER_SIZE = "TORCH_NCCL_TRACE_BUFFER_SIZE"
+TRACE_FILE = "TORCH_NCCL_DEBUG_INFO_TEMP_FILE"
+DUMP_ON_TIMEOUT = "TORCH_NCCL_DUMP_ON_TIMEOUT"
+ASYNC_ERROR_HANDLING = "TORCH_NCCL_ASYNC_ERROR_HANDLING"
+SKIP_CLEANUP = "3"
+BUFFER_SIZE = "20000"
+
+
+def _warn_overwrite_env(env, val):
+    if env in os.environ:
+        print(
+            f"ENV[{env}] = {os.environ[env]} will be overridden to {val} based on job config"
+        )
+    os.environ[env] = val
+
+
 def distributed_init(config):
+    # # FlightRecorder is incompatible with =1 mode where watchdog aborts work, must use =3 (skipcleanup)
+    # # to get flight recorder dumps. See https://github.com/pytorch/pytorch/issues/121055
+    # # This could be done only when flight recorder is enabled, but its nice to be consistent to avoid subtle
+    # # behavior differences
+    # _warn_overwrite_env(ASYNC_ERROR_HANDLING, SKIP_CLEANUP)
+
+    # # enable torch nccl flight recorder in the mode that would dump files if timeout is detected
+    # _warn_overwrite_env(TRACE_BUFFER_SIZE, BUFFER_SIZE)
+    # # dump on timeout by default if trace buffer is enabled
+    # _warn_overwrite_env(DUMP_ON_TIMEOUT, "1")
+    # dump_dir = f"{config.training.save_dir}/comm_trace"
+    # os.makedirs(dump_dir, exist_ok=True)
+    # _warn_overwrite_env(TRACE_FILE, f"{dump_dir}/rank_")
+
+    # # to mitigate the memory issue that collectives using
+    # # async_op=True hold memory longer than they should
+    # # such as those in tensor parallelism
+    # os.environ["TORCH_NCCL_AVOID_RECORD_STREAMS"] = "1"
+
     if config.distributed.world_size == 1:
         raise ValueError("Cannot initialize distributed with distributed_world_size=1")
+
+    timeout_duration = datetime.timedelta(minutes=60)
 
     if dist.is_initialized():
         warnings.warn("Distributed is already initialized, cannot initialize twice!")
@@ -301,11 +392,16 @@ def distributed_init(config):
             ),
             flush=True,
         )
+
+        global _LOCAL_RANK
+        _LOCAL_RANK = config.device_id
+
         dist.init_process_group(
             backend=config.distributed.backend,
             init_method=config.distributed.init_method,
             world_size=config.distributed.world_size,
             rank=config.distributed.rank,
+            timeout=timeout_duration,
         )
         print(
             "Initialized Host {} as Rank {}".format(
@@ -317,10 +413,15 @@ def distributed_init(config):
         # perform a dummy all-reduce to initialize the NCCL communicator
         dist.all_reduce(torch.zeros(1).cuda())
 
-        suppress_output(is_master())
+        # suppress_output(is_master())
 
     config.distributed.rank = dist.get_rank()
     return config.distributed.rank
+
+
+def destroy_process_group():
+    if is_dist_avail_and_initialized():
+        dist.destroy_process_group()
 
 
 def suppress_output(is_master):

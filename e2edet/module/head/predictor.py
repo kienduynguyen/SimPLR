@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from e2edet.utils.general import inverse_sigmoid
-from e2edet.utils.distributed import synchronize
 
 from .helper import MLP, SegmentMLP, SegmentMLPv2
 
@@ -37,8 +36,9 @@ class MultiDetector(nn.Module):
         outputs_class = self.class_embed(x).view(n, b, l, self.num_references, -1)
 
         if x_mask is not None:
+            dtype_min = torch.finfo(outputs_class.dtype).min
             outputs_class = outputs_class.masked_fill(
-                x_mask.unsqueeze(-1).unsqueeze(-1), -65504.0
+                x_mask.unsqueeze(-1).unsqueeze(-1), dtype_min
             )
         outputs_class = outputs_class.view(n, b, l * self.num_references, -1)
 
@@ -137,7 +137,8 @@ class Segmentor(nn.Module):
         outputs_class = self.class_embed(x)
 
         if x_mask is not None:
-            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), -65504.0)
+            dtype_min = torch.finfo(outputs_class.dtype).min
+            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), dtype_min)
         out = {"pred_logits": outputs_class}
 
         if self.with_box:
@@ -172,9 +173,7 @@ class Segmentor(nn.Module):
             l = outputs_mask.shape[1]
             out["pred_masks"] = outputs_mask
             out["padding_masks"] = (
-                None
-                if feat_mask is None
-                else feat_mask.unsqueeze(1).repeat(1, l, 1, 1)
+                None if feat_mask is None else feat_mask.unsqueeze(1).repeat(1, l, 1, 1)
             )
 
         return out
@@ -248,7 +247,8 @@ class Detector(nn.Module):
             outputs_mask = None
 
         if x_mask is not None:
-            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), -65504.0)
+            dtype_min = torch.finfo(outputs_class.dtype).min
+            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), dtype_min)
 
         if self.mode_pred == "detr":
             if ref_windows is not None:
@@ -330,7 +330,8 @@ class Detectorv2(nn.Module):
             outputs_mask = None
 
         if x_mask is not None:
-            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), -65504.0)
+            dtype_min = torch.finfo(outputs_class.dtype).min
+            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), dtype_min)
 
         if self.mode_pred == "detr":
             if ref_windows is not None:
@@ -371,7 +372,8 @@ class Detector3d(nn.Module):
         outputs_coord = outputs_coord[..., [0, 1, 5, 2, 3, 6, 4]].sigmoid()
 
         if x_mask is not None:
-            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), -65504.0)
+            dtype_min = torch.finfo(outputs_class.dtype).min
+            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), dtype_min)
 
         out = {"pred_logits": outputs_class[-1], "pred_boxes": outputs_coord[-1]}
         if self.aux_loss:
@@ -422,7 +424,8 @@ class MultiDetector3d(nn.Module):
                 raise ValueError("ref_windows should be 4 dim")
 
         if x_mask is not None:
-            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), -65504.0)
+            dtype_min = torch.finfo(outputs_class.dtype).min
+            outputs_class = outputs_class.masked_fill(x_mask.unsqueeze(-1), dtype_min)
         outputs_class = outputs_class.view(nl, b, l * self.num_references, -1)
         outputs_coord = outputs_coord.view(nl, b, l * self.num_references, -1).sigmoid()
 

@@ -8,6 +8,7 @@ from omegaconf import OmegaConf
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split(".")[:2])
 
 from e2edet.utils.distributed import is_master
+from e2edet.utils.logger import logger
 
 
 def load_pretraind_state_dict(state_dict, trainer, strict=False):
@@ -24,11 +25,6 @@ def load_pretraind_state_dict(state_dict, trainer, strict=False):
             TORCH_VERSION < (2, 0) or not trainer.running_config.use_compile
         ):
             processed_name = processed_name.replace("_orig_mod.", "", 1)
-
-        if not name.startswith("_orig_mod.") and (
-            TORCH_VERSION >= (2, 0) and trainer.running_config.use_compile
-        ):
-            processed_name = "_orig_mod." + name
 
         model_dict[processed_name] = state_dict["model"][name]
 
@@ -69,27 +65,22 @@ def load_pretraind_state_dict(state_dict, trainer, strict=False):
     del model_dict
 
 
-class Checkpoint:
-    def __init__(self, trainer):
-        self.trainer = trainer
-        self.config = self.trainer.config
+class CheckpointManager:
+    def __init__(self, config, trainer):
+        self.config = config
         self.save_dir = self.config.training.save_dir
         self.num_checkpoint = self.config.training.num_checkpoint
         self.model_name = self.config.model
-
-        self.ckpt_foldername = self.save_dir
         self.device = trainer.device
+        self.trainer = trainer
 
-        self.ckpt_prefix = ""
+        if is_master():
+            if not os.path.exists(self.save_dir):
+                os.makedirs(self.save_dir, exist_ok=True)
 
-        if hasattr(self.trainer.model, "get_ckpt_name"):
-            self.ckpt_prefix = self.trainer.model.get_ckpt_name() + "_"
+        self.pth_filepath = os.path.join(self.save_dir, self.model_name + "_final.pth")
 
-        self.pth_filepath = os.path.join(
-            self.ckpt_foldername, self.ckpt_prefix + self.model_name + "_final.pth"
-        )
-
-        self.models_foldername = os.path.join(self.ckpt_foldername, "models")
+        self.models_foldername = os.path.join(self.save_dir, "models")
         if is_master():
             if not os.path.exists(self.models_foldername):
                 os.makedirs(self.models_foldername, exist_ok=True)
@@ -108,7 +99,7 @@ class Checkpoint:
         return save_config
 
     def save_config(self):
-        cfg_file = os.path.join(self.ckpt_foldername, "config.yaml")
+        cfg_file = os.path.join(self.save_dir, "config.yaml")
         save_config = self._process_config()
 
         with open(cfg_file, "w") as f:
@@ -121,34 +112,32 @@ class Checkpoint:
         tp = self.config.training
 
         if tp.resume:
+            ckpt_file_paths = sorted(
+                glob.glob(os.path.join(self.models_foldername, "model_*.ckpt")),
+                key=self._extract_iter,
+            )
+
+            if len(ckpt_file_paths) > 0:
+                logger.info("Loading weights the last checkpoint")
+                ckpt_filepath = ckpt_file_paths[-1]
+                self._load(ckpt_filepath)
+                return True
+            else:
+                logger.warning("No checkpoint found!")
+
             if tp.resume_file is not None:
-                self.trainer.writer.write(
-                    "Loading weights from {}".format(tp.resume_file)
-                )
+                logger.info("Loading weights from {}".format(tp.resume_file))
 
                 if os.path.exists(tp.resume_file):
                     self._load(tp.resume_file)
                     return True
                 else:
                     raise RuntimeError("{} doesn't exist".format(tp.resume_file))
-            else:
-                self.trainer.writer.write("Loading weights the last checkpoint")
-                ckpt_file_paths = sorted(
-                    glob.glob(os.path.join(self.models_foldername, "model_*.ckpt")),
-                    key=self._extract_iter,
-                )
-
-                if len(ckpt_file_paths) > 0:
-                    ckpt_filepath = ckpt_file_paths[-1]
-                    self._load(ckpt_filepath)
-                    return True
-                else:
-                    warnings.warn("No checkpoint found!")
 
         return False
 
     def _load(self, file):
-        self.trainer.writer.write("Loading checkpoint")
+        logger.info("Loading checkpoint")
 
         ckpt = self._torch_load(file)
         if "model" in ckpt:
@@ -160,7 +149,7 @@ class Checkpoint:
 
         if "cuda" in str(self.device):
             torch.cuda.empty_cache()
-        self.trainer.writer.write("Checkpoint loaded")
+        logger.info("Checkpoint loaded")
 
     def _torch_load(self, file):
         if "cuda" in str(self.device):

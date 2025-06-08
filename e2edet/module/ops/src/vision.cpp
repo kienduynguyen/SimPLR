@@ -3,7 +3,6 @@
 #include "instance_attn/instance_attn.h"
 #include "fast_instance_attn/fast_instance_attn.h"
 #include "fast_box_attn/fast_box_attn.h"
-#include "upsample_attn/upsample_attn.h"
 
 namespace e2edet {
 
@@ -16,8 +15,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("fast_instance_attn_backward", &fast_instance_attn_backward, "fast_instance_attn_backward");
     m.def("fast_box_attn_forward", &fast_box_attn_forward, "fast_box_attn_forward");
     m.def("fast_box_attn_backward", &fast_box_attn_backward, "fast_box_attn_backward");
-    m.def("upsample_attn_forward", &upsample_attn_forward, "upsample_attn_forward");
-    m.def("upsample_attn_backward", &upsample_attn_backward, "upsample_attn_backward");
 }
 
 }

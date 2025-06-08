@@ -1,11 +1,7 @@
 import importlib
 import os
 
-from .base_engine import BaseEngine
-
-
 TRAINER_REGISTRY = {}
-ENGINE_REGISTRY = {}
 
 
 def build_trainer(configuration, *rest, **kwargs):
@@ -18,13 +14,6 @@ def build_trainer(configuration, *rest, **kwargs):
     return trainer
 
 
-def build_engine(config, trainer):
-    task_name = config.task
-    engine = ENGINE_REGISTRY[task_name](trainer)
-
-    return engine
-
-
 def register_trainer(name):
     def register_trainer_cls(cls):
         if name in TRAINER_REGISTRY:
@@ -34,22 +23,6 @@ def register_trainer(name):
         return cls
 
     return register_trainer_cls
-
-
-def register_engine(*name_list):
-    def register_engine_cls(cls):
-        for name in name_list:
-            if name in ENGINE_REGISTRY:
-                raise ValueError("Cannot register duplicate engine ({})".format(name))
-            elif not issubclass(cls, BaseEngine):
-                raise ValueError(
-                    "Engine ({}: {}) must extend BaseEngine".format(name, cls.__name__)
-                )
-
-            ENGINE_REGISTRY[name] = cls
-        return cls
-
-    return register_engine_cls
 
 
 trainers_dir = os.path.dirname(__file__)

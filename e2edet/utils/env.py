@@ -8,18 +8,38 @@
 # ------------------------------------------------------------------------
 import argparse
 import os
-import random
 from datetime import datetime
+from typing import Optional
 
-import numpy as np
 import torch
-import torch.backends.cudnn as cudnn
 
 from e2edet.dataset import get_task_list
 from e2edet.model import get_arch_list
 from e2edet.utils.distributed import get_rank
 
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split(".")[:2])
+
+
+def set_determinism(seed: Optional[int]) -> None:
+    """
+    Set Python, PyTorch, CUDA seeds and cudnn settings for reproducibility
+    """
+    if seed > 0:
+        # CPU and GPU determinism
+        torch.manual_seed(seed)
+        # set deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # set Python seed
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.use_deterministic_algorithms(True)
+        # env var for deterministic CuBLAS
+        # https://pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    else:
+        # ensure we turn off deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
 
 
 def set_seed(seed):
@@ -33,11 +53,7 @@ def set_seed(seed):
             )
         else:
             seed = seed + get_rank()
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        random.seed(seed)
-
-        cudnn.benchmark = True
+        set_determinism(seed)
 
     return seed
 
@@ -104,7 +120,10 @@ def get_parser():
         help="The working task.",
     )
     parser.add_argument(
-        "opts", default=None, nargs="*", help="Modify config options from command line",
+        "opts",
+        default=None,
+        nargs="*",
+        help="Modify config options from command line",
     )
 
     return parser

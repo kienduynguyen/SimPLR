@@ -19,10 +19,9 @@ from e2edet.utils.distributed import (
     synchronize,
     is_master,
 )
-from e2edet.utils.params import recursive_copy_to_device
+from e2edet.utils.functional import recursive_copy_to_device
 from e2edet.dataset.helper import Prefetcher
-from e2edet.trainer import register_engine
-from e2edet.trainer.base_engine import BaseEngine
+from e2edet.trainer.engine import BaseEngine, register_engine
 
 
 @register_engine("detection", "detection3d", "panoptic")

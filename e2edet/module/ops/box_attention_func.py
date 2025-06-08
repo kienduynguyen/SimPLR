@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
-from torch.cuda.amp import custom_fwd, custom_bwd
+from torch.amp import custom_fwd, custom_bwd
 
 from e2edet import ops
 
@@ -276,79 +276,6 @@ class FastInstanceAttnFunction(Function):
             None,
             grad_sampling_loc,
             grad_spatial_attn_weight,
-            grad_level_attn_weight,
-            None,
-            None,
-        )
-
-
-class UpsampleAttnFunction(Function):
-    @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
-    def forward(
-        ctx,
-        value,
-        value_spatial_shapes,
-        value_level_start_index,
-        sampling_locations,
-        level_attention_weights,
-        mask_size,
-        im2col_step,
-    ):
-        ctx.im2col_step = im2col_step
-        mask_output = ops.upsample_attn_forward(
-            value,
-            value_spatial_shapes,
-            value_level_start_index,
-            sampling_locations,
-            level_attention_weights,
-            im2col_step,
-        )
-
-        ctx.save_for_backward(
-            value,
-            value_spatial_shapes,
-            value_level_start_index,
-            sampling_locations,
-            level_attention_weights,
-        )
-
-        b, l, _, c = mask_output.shape
-        mask_output = mask_output.view(b, l, mask_size, mask_size, c)
-
-        return mask_output
-
-    @staticmethod
-    @custom_bwd
-    @once_differentiable
-    def backward(ctx, grad_mask_output):
-        (
-            value,
-            value_spatial_shapes,
-            value_level_start_index,
-            sampling_locations,
-            level_attention_weights,
-        ) = ctx.saved_tensors
-
-        (
-            grad_value,
-            grad_sampling_loc,
-            grad_level_attn_weight,
-        ) = ops.upsample_attn_backward(
-            value,
-            value_spatial_shapes,
-            value_level_start_index,
-            sampling_locations,
-            level_attention_weights,
-            grad_mask_output.contiguous(),
-            ctx.im2col_step,
-        )
-
-        return (
-            grad_value,
-            None,
-            None,
-            grad_sampling_loc,
             grad_level_attn_weight,
             None,
             None,

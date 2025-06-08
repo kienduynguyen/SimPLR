@@ -161,6 +161,7 @@ optimizer:
     betas:
       - 0.9
       - 0.999
+    early_step_in_backward: false
 
 training:
   batch_size: 16

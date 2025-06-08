@@ -19,7 +19,6 @@ from e2edet.utils.box_ops import (
     bce_cls_cost,
 )
 from e2edet.utils.det3d.box_ops import box_cxcyczlwh_to_xyxyxy, generalized_box3d_iou
-from e2edet.utils.distributed import synchronize
 
 
 class BaseMatcher(nn.Module):
@@ -531,9 +530,7 @@ class HungarianMatcher3d(BaseMatcher):
                 )
 
                 neg_cost_class = (
-                    (1 - alpha)
-                    * (out_prob_i ** gamma)
-                    * (-(1 - out_prob_i + 1e-8).log())
+                    (1 - alpha) * (out_prob_i**gamma) * (-(1 - out_prob_i + 1e-8).log())
                 )
                 pos_cost_class = (
                     alpha * ((1 - out_prob_i) ** gamma) * (-(out_prob_i + 1e-8).log())

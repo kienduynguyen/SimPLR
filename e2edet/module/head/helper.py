@@ -90,27 +90,3 @@ class SegmentMLPv2(nn.Module):
         x = self.layers(x).view(b, l, -1, 2 * s, 2 * s)
 
         return x
-
-
-def gather_w_stride(x, mask, x_shape, stride):
-    h, w = x_shape[0].tolist()
-
-    y_indices = torch.arange(0, h, stride, device=x.device)
-    x_indices = torch.arange(0, w, stride, device=x.device)
-
-    y_indices, x_indices = torch.meshgrid(y_indices, x_indices, indexing="ij")
-    indices = (y_indices * w + x_indices).view(-1)
-
-    x = torch.gather(x, dim=1, index=indices)
-    mask = torch.gather(mask, dim=1, index=indices)
-
-    return x, mask
-
-
-def gather_w_pool(x, mask, x_shape, stride):
-    x, mask = view_with_shape(x, mask, x_shape)
-
-    x = F.avg_pool2d(x, stride)
-    mask = F.avg_pool2d(mask[:, None].float(), stride).bool()
-
-    return x, mask

@@ -11,18 +11,12 @@ import os
 import collections
 
 import torch
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split(".")[:2])
-if TORCH_VERSION >= (2, 0) and TORCH_VERSION < (2, 1):
-    import torch._dynamo as dynamo
-    import logging
-
-    torch._dynamo.config.verbose = True
-    torch._dynamo.config.log_level = logging.INFO
 
 from e2edet.utils.meter import Meter
-from e2edet.utils.checkpoint import Checkpoint
+from e2edet.utils.checkpoint import CheckpointManager
 from e2edet.utils.distributed import (
     is_master,
     is_dist_avail_and_initialized,
@@ -35,7 +29,8 @@ from e2edet.model import build_model
 from e2edet.optim import build_optimizer
 from e2edet.optim.scheduler import build_scheduler
 from e2edet.dataset import build_dataset, build_dataloader
-from e2edet.trainer import register_trainer, build_engine
+from e2edet.trainer import register_trainer
+from e2edet.trainer.engine import build_engine
 from e2edet.criterion import build_loss, build_metric
 
 
@@ -154,9 +149,10 @@ class BaseTrainer:
             if self.running_config.use_fp16 == "none"
             else self.running_config.use_fp16
         )
-        self.grad_scaler = GradScaler() if self.use_fp16 else None
+        self.grad_scaler = GradScaler() if self.use_fp16 == "float16" else None
 
-        self.checkpoint = Checkpoint(self)
+        self.writer.write("CheckpointManager is initialized...")
+        self.checkpoint = CheckpointManager(self)
         self.engine = build_engine(self.config, self)
 
         self.log_interval = self.running_config.log_interval
@@ -214,8 +210,6 @@ class BaseTrainer:
                 os.makedirs(tb_log_folder)
             synchronize()
             self.tb_writer = TensorboardLogger(tb_log_folder)
-        print(self.optimizer)
-        print(self.lr_scheduler)
 
     def _init_losses_and_metrics(self):
         loss_config = self.config.get("loss", None)

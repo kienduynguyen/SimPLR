@@ -45,12 +45,12 @@ def build_dataset(config, dataset_type, current_device):
     return dataset
 
 
-def build_dataloader(config, dataset_type, dataset):
+def build_dataloader(config, dataset_type, dataset, rank=None, world_size=None):
     training = config.training
     num_workers = training.num_workers
     pin_memory = training.pin_memory
 
-    other_args = {}
+    other_args = {"rank": rank, "world_size": world_size}
     if dataset_type == "train":
         other_args["shuffle"] = True
 

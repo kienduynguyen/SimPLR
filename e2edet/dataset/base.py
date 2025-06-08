@@ -7,7 +7,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 
 from e2edet.dataset.processor import build_processor
-from e2edet.utils.general import get_cache_dir, get_root
+from e2edet.utils.general import get_cache_dir
 
 
 class BaseDataset(Dataset):

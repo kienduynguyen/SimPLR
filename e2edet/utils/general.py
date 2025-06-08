@@ -4,6 +4,9 @@ import math
 import copy
 import collections
 import re
+import warnings
+import gc
+import time
 
 import numpy as np
 import torch
@@ -14,8 +17,25 @@ import torchvision
 from e2edet.utils.distributed import get_world_size
 from e2edet.utils.box_ops import box_cxcywh_to_xyxy
 
+from .logger import logger
+
 
 string_classes = str
+
+
+def get_dataset_absolute_path(paths):
+    if os.environ.get("E2E_DATASETS") is None:
+        warnings.warn("E2E_DATASETS environment not found! Setting to '.data' ...")
+        os.environ["E2E_DATASETS"] = get_cache_dir(".data")
+
+    if isinstance(paths, str):
+        if not os.path.isabs(paths):
+            paths = os.path.join(os.environ.get("E2E_DATASETS"), paths)
+        return paths
+    elif isinstance(paths, collections.Sequence):
+        return [get_dataset_absolute_path(path) for path in paths]
+    else:
+        raise TypeError("Paths passed to dataset should either be " "string or list")
 
 
 def create_ref_windows(tensor_list, mask_list, ref_size, ref_size_ratios=None):
@@ -94,7 +114,7 @@ def patchify(imgs, patch_size, padding=True, normalize="none"):
     h = w = imgs.shape[2] // patch_size
     x = imgs.reshape(shape=(imgs.shape[0], 3, h, patch_size, w, patch_size))
     x = torch.einsum("nchpwq->nhwpqc", x)
-    x = x.reshape(shape=(imgs.shape[0], h * w, (patch_size ** 2) * 3))
+    x = x.reshape(shape=(imgs.shape[0], h * w, (patch_size**2) * 3))
 
     if normalize == "global":
         mean = x.mean(dim=-1, keepdim=True)
@@ -184,7 +204,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     assert embed_dim % 2 == 0
     omega = np.arange(embed_dim // 2, dtype=np.float)
     omega /= embed_dim / 2.0
-    omega = 1.0 / 10000 ** omega  # (D/2,)
+    omega = 1.0 / 10000**omega  # (D/2,)
 
     pos = pos.reshape(-1)  # (M,)
     out = np.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
@@ -210,7 +230,7 @@ def interpolate_pos_embed(model, checkpoint_model):
         # height (== width) for the checkpoint position embedding
         orig_size = int((pos_embed_checkpoint.shape[-2] - num_extra_tokens) ** 0.5)
         # height (== width) for the new position embedding
-        new_size = int(num_patches ** 0.5)
+        new_size = int(num_patches**0.5)
         # class_token and dist_token are kept unchanged
         if orig_size != new_size:
             print(
@@ -640,3 +660,50 @@ def blockPrint():
 # Restore
 def enablePrint():
     sys.stdout = sys.__stdout__
+
+
+def contains_fsdp(model: nn.Module) -> bool:
+    """
+    Checks if the model contains FSDP.
+
+    Args:
+        model (nn.Module): Model to check.
+
+    Returns:
+        bool: True if the model contains FSDP, False otherwise.
+    """
+    return any(
+        isinstance(m, torch.distributed.fsdp.FullyShardedDataParallel)
+        for m in model.modules()
+    )
+
+
+# used to avoid stragglers in garbage collection
+class GarbageCollection:
+    def __init__(self, gc_freq: int = 1000, debug: bool = False):
+        assert gc_freq > 0, "gc_freq must be a positive integer"
+        self.gc_freq = gc_freq
+        self.debug = debug
+        gc.disable()
+        self.collect("Initial GC collection.")
+        if debug:
+            from torch.utils.viz._cycles import warn_tensor_cycles
+
+            if torch.distributed.get_rank() == 0:
+                warn_tensor_cycles()
+
+    def run(self, step_count: int):
+        if self.debug:
+            self.collect(
+                "Force GC to perform collection to obtain debug information.",
+                generation=2,
+            )
+            gc.collect()
+        elif step_count > 1 and step_count % self.gc_freq == 0:
+            self.collect("Peforming periodical GC collection.")
+
+    @staticmethod
+    def collect(reason: str, generation: int = 1):
+        begin = time.monotonic()
+        gc.collect(generation)
+        logger.info("[GC] %s %.2f seconds.", reason, time.monotonic() - begin)

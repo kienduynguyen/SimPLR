@@ -1,18 +1,19 @@
 import importlib
 import collections.abc
-from lib2to3.pgen2.token import OP
 import os
 import copy
 
 import torch
 import torch.optim as optim
 import omegaconf
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 
-from e2edet.optim.oss import OSS
-from e2edet.utils.general import get_optimizer_parameters
+from e2edet.utils.general import get_optimizer_parameters, contains_fsdp
+
+from .optim_wrapper import OptimizersContainer, OptimizersInBackwardContainer
 
 
-OPTIM_REGISTRY = {"sgd": optim.SGD, "adamw": optim.AdamW}
+OPTIM_REGISTRY = {"adam": optim.Adam, "adamw": optim.AdamW}
 
 
 def build_optimizer(config, model):
@@ -20,11 +21,12 @@ def build_optimizer(config, model):
     optim_config = copy.deepcopy(config.optimizer["params"])
 
     with omegaconf.open_dict(optim_config):
-        use_oss = optim_config.pop("use_oss", False)
         redundants = ["lr_decay_rate", "wd_norm", "wd_bias"]
         for redundant in redundants:
             if redundant in optim_config:
                 optim_config.pop(redundant)
+
+        early_step_in_backward = optim_config.pop("early_step_in_backward", False)
 
     if optim_type not in OPTIM_REGISTRY:
         raise ValueError("Optimizer ({}) is not found.".format(optim_type))
@@ -54,10 +56,16 @@ def build_optimizer(config, model):
     else:
         param_groups = [{"lr": optim_config["lr"], "params": model_params}]
 
-    if use_oss:
-        optimizer = OSS(
-            params=param_groups, optim=OPTIM_REGISTRY[optim_type], **optim_config
-        )
+    if contains_fsdp(model):
+        optimizer_cls = OPTIM_REGISTRY[optim_type]
+        if early_step_in_backward:
+            optimizer = OptimizersInBackwardContainer(
+                model, param_groups, optimizer_cls, optim_config
+            )
+        else:
+            optimizer = OptimizersContainer(
+                model, param_groups, optimizer_cls, optim_config
+            )
     else:
         optimizer = OPTIM_REGISTRY[optim_type](param_groups, **optim_config)
 

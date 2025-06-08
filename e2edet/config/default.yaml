@@ -79,6 +79,21 @@ training:
   # Turn on if you want to ignore unused parameters in case of DDP
   find_unused_parameters: false
 
+# Configuration for FSDP training
+parallel:
+  data_parallel_shard_degree: 1
+  data_parallel_replicate_degree: 1
+  tensor_parallel_degree: 1
+  enable_loss_parallel: false
+  use_compile: ${training.use_compile}
+  enable_async_tp: false
+  ac_mode: none
+  selective_ac_option: 1
+  mp_param: float16
+  mp_reduce: float16
+  enable_compiled_autograd: false
+  create_seed_checkpoint: false
+
 # Configuration for models, default configuration files for various models
 # included in MMF can be found under configs directory in root folder
 model_config: {}

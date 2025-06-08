@@ -1,4 +1,4 @@
-from typing import Optional, List, Set, Dict, Any
+from typing import Optional, List, Set
 
 import torch
 
@@ -34,8 +34,7 @@ def get_parameters(
     model: torch.nn.Module,
     lr_multi: Optional[float] = 1.0,
     lr_module: Optional[List[str]] = [],
-    wd_norm: Optional[float] = None,
-    wd_emb: Optional[float] = None,
+    apply_wd: Optional[bool] = False,
     module_except: Optional[List[str]] = [],
 ):
     param_group_no_decay = {"params": []}
@@ -54,6 +53,7 @@ def get_parameters(
                 or isinstance(module, torch.nn.Embedding)
                 or "relative_position_bias_table" in module_name
                 or "absolute_pos_embed" in module_name
+                or param.ndim == 1
             ):
                 print("no decay:", module_name)
                 param_group_no_decay["params"].append(param)
@@ -66,7 +66,7 @@ def get_parameters(
     if lr_multi is not None and lr_multi != 1.0:
         param_group_lr_multi["lr_multi"] = lr_multi
 
-    if wd_norm is not None or wd_emb is not None:
+    if not apply_wd:
         param_group_no_decay["weight_decay"] = 0.0
 
     optimizer_grouped_parameters = [
@@ -80,9 +80,8 @@ def get_parameters(
 
 def get_vit_parameters(
     model: torch.nn.Module,
+    apply_wd: Optional[bool] = False,
     wd_except: Optional[List[str]] = None,
-    wd_bias: Optional[float] = None,
-    wd_norm: Optional[float] = None,
     lr_decay_rate: Optional[float] = None,
     num_layers: Optional[int] = None,
 ):
@@ -110,13 +109,11 @@ def get_vit_parameters(
             memo.add(param)
 
             no_decay = False
-            if isinstance(module, norm_module_types) and wd_norm == 0.0:
-                no_decay = True
-
-            if "bias" in param_name and wd_bias == 0.0:
-                no_decay = True
-
-            if wd_except is not None and any(nd in param_name for nd in wd_except):
+            if not apply_wd and (
+                isinstance(module, norm_module_types)
+                or param.ndim == 1
+                or any(nd in param_name for nd in wd_except)
+            ):
                 no_decay = True
 
             if lr_decay_rate is not None:
@@ -137,43 +134,5 @@ def get_vit_parameters(
                 else:
                     param_group_decay[0]["params"].append(param)
     optimizer_grouped_parameters = param_group_decay + param_group_no_decay
-
-    return optimizer_grouped_parameters
-
-
-def get_mae_parameters(
-    model: torch.nn.Module,
-    wd_except: Optional[List[str]] = None,
-    wd_bias: Optional[float] = None,
-    wd_norm: Optional[float] = None,
-):
-    memo: Set[torch.nn.parameter.Parameter] = set()
-
-    param_group_decay = {"params": []}
-    param_group_no_decay = {"params": [], "weight_decay": 0.0}
-
-    for module in model.modules():
-        for param_name, param in module.named_parameters(recurse=False):
-            if not param.requires_grad:
-                continue
-            if param in memo:
-                continue
-            memo.add(param)
-
-            no_decay = False
-            if isinstance(module, norm_module_types) and wd_norm == 0.0:
-                no_decay = True
-
-            if "bias" in param_name and wd_bias == 0.0:
-                no_decay = True
-
-            if wd_except is not None and any(nd in param_name for nd in wd_except):
-                no_decay = True
-
-            if no_decay:
-                param_group_no_decay["params"].append(param)
-            else:
-                param_group_decay["params"].append(param)
-    optimizer_grouped_parameters = [param_group_decay, param_group_no_decay]
 
     return optimizer_grouped_parameters
