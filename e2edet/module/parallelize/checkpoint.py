@@ -24,6 +24,7 @@ import torch.distributed as dist
 import torch.distributed.checkpoint as dcp
 from torch.distributed.checkpoint.state_dict import (
     get_model_state_dict,
+    get_optimizer_state_dict,
     StateDictOptions,
     _verify_state_dict,
     _unflatten_model_state_dict,

@@ -11,7 +11,7 @@ loss:
     dice_loss_coef: 5
 
 model_config:
-  boxer2d_vit:
+  simplr:
     enc_dim: 960
     dec_dim: 384
     backbone:
@@ -53,7 +53,7 @@ model_config:
           - 29
           - 30
     transformer:
-      type: box_transformer_v2
+      type: simplr_transformer
       params:
         nlevel: 1
         nhead: 24

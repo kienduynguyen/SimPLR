@@ -109,6 +109,10 @@ class DeformableTransformer(nn.Module):
         nn.init.constant_(self.decoder.detector.bbox_embed.layers[-1].weight, 0)
         nn.init.constant_(self.decoder.detector.bbox_embed.layers[-1].bias, 0)
 
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"encoder.layers", "decoder.layers"}
+
     def _create_ref_windows(self, tensor_list, mask_list):
         ref_windows = []
 

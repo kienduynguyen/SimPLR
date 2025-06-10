@@ -1,4 +1,3 @@
-import gc
 import os
 import json
 import collections
@@ -262,13 +261,9 @@ class DetEngine(BaseEngine):
         self.trainer._update_tensorboard(split)
 
         self.model.train()
-        gc.collect()
-        if "cuda" in str(self.trainer.device):
-            torch.cuda.empty_cache()
-
         self.trainer.timers["train"].reset()
 
-    def train_epoch(self, trained_batch_idx):
+    def train_epoch(self):
         current_epoch = self.trainer.current_epoch
         current_update = self.trainer.current_update
         max_update = self.trainer.max_update
@@ -290,9 +285,6 @@ class DetEngine(BaseEngine):
             self.trainer.profile("Batch prepare time")
 
             batch = prefetcher.get_next_sample()
-            if idx < trained_batch_idx:
-                continue
-
             self.optimizer.zero_grad(set_to_none=True)
 
             if iter_per_update > 1:
@@ -307,28 +299,18 @@ class DetEngine(BaseEngine):
                 num_boxes = torch.clamp(num_boxes / get_world_size(), min=1)
 
                 assert iter_per_update == len(batch)
-                for idx, splitted_batch in enumerate(batch):
+                for splitted_batch in batch:
                     # splitted_batch[0]["num_boxes"] = num_boxes
-                    if (idx + 1) < iter_per_update:
-                        with self.model.no_sync():
-                            output = self._forward(splitted_batch, num_boxes=num_boxes)[
-                                0
-                            ]
-                            if output is None:
-                                continue
-                            self._sync_losses_and_metrics("train", output)
-                            self._backward(output)
-                    else:
-                        output, _ = self._forward(splitted_batch, num_boxes=num_boxes)
-                        if output is None:
-                            continue
-                        self._sync_losses_and_metrics("train", output)
-                        self._backward(output)
+                    output = self._forward(splitted_batch, num_boxes=num_boxes)[0]
+                    if output is None:
+                        continue
+                    self.trainer._sync_losses_and_metrics("train", output)
+                    self._backward(output)
             else:
                 output = self._forward(batch)[0]
                 if output is None:
                     continue
-                self._sync_losses_and_metrics("train", output)
+                self.trainer._sync_losses_and_metrics("train", output)
                 self._backward(output)
 
             current_update = self._step(current_update)
@@ -345,7 +327,8 @@ class DetEngine(BaseEngine):
 
             assert self.trainer.current_update == (current_update - 1)
             self.trainer.current_update = current_update
-            self._update_info("train")
+            self.trainer.gc_handler.run(current_update)
+            self._update_info("train", current_update)
 
             if current_update % save_interval == 0:
                 self.trainer.writer.write("Checkpoint time. Saving a checkpoint...")

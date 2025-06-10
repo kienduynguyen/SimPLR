@@ -60,6 +60,9 @@ class COCOPanoptic(BaseDataset):
 
         return self.answer_processor.get_size()
 
+    def get_model_params(self):
+        return {"num_classes": self.answer_processor.get_size()}
+
     def get_api(self):
         return self.coco_dataset.coco
 
@@ -89,6 +92,7 @@ class COCOPanoptic(BaseDataset):
     @torch.no_grad()
     def format_for_evalai(self, output, targets):
         from panopticapi.utils import id2rgb
+
         # """Perform the computation
         # Parameters:
         #     outputs: raw outputs of the model

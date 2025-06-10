@@ -10,7 +10,7 @@ ARCH_REGISTRY = {}
 __all__ = ["BaseDetectionModel"]
 
 
-def build_model(config, num_classes):
+def build_model(config, num_classes=None):
     model_name = config.model
     model_config = config.model_config[model_name]
 

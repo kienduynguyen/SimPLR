@@ -150,6 +150,10 @@ class SimPLRTransformer(nn.Module):
         nn.init.constant_(self.decoder.detector.bbox_embed.layers[-1].bias, 0)
         nn.init.constant_(self.decoder.detector.mask_embed.layers[-1].bias, 0)
 
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"encoder.layers", "decoder.layers"}
+
     def _create_ref_windows(self, tensor_list, mask_list):
         num_scale = len(self.ref_size_ratios)
         ref_size = self.ref_size * torch.FloatTensor(list(self.ref_size_ratios)).to(

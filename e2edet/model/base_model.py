@@ -1,6 +1,4 @@
-import collections
-import warnings
-
+import torch
 from torch import nn
 
 
@@ -28,6 +26,18 @@ class BaseDetectionModel(nn.Module):
         raise NotImplementedError(
             "Build method not implemented in the child model class."
         )
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        shard_modules = set()
+
+        for shard_module in self.backbone.shard_modules():
+            shard_modules.add("backbone." + shard_module)
+
+        for shard_module in self.transformer.shard_modules():
+            shard_modules.add("transformer." + shard_module)
+
+        return shard_modules
 
     def build(self):
         self._build()

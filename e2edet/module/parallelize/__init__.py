@@ -7,7 +7,7 @@ from .parallelize import (
     apply_tp,
     parallelize_model,
 )
-from .utils import reduce_dict, clip_grad_norm_
+from .utils import reduce_dict, clip_grad_norm_, set_determinism
 from .checkpoint import CheckpointManager
 
 __all__ = [
@@ -21,4 +21,5 @@ __all__ = [
     "CheckpointManager",
     "reduce_dict",
     "clip_grad_norm_",
+    "set_determinism",
 ]

@@ -7,20 +7,118 @@ import re
 import warnings
 import gc
 import time
+import subprocess
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+from torch._utils import _get_available_device_type, _get_device_module
 
-from e2edet.utils.distributed import get_world_size
+from e2edet.utils.distributed import get_world_size, synchronize
 from e2edet.utils.box_ops import box_cxcywh_to_xyxy
 
 from .logger import logger
 
 
 string_classes = str
+
+
+def has_cuda_capability(major: int, minor: int) -> bool:
+    return torch.cuda.is_available() and torch.cuda.get_device_capability() >= (
+        major,
+        minor,
+    )
+
+
+def get_device_info():
+    device_type = _get_available_device_type()
+    if device_type is None:
+        device_type = "cuda"  # default device_type: cuda
+    device_module = _get_device_module(device_type)  # default device_module:torch.cuda
+    return device_type, device_module
+
+
+device_type, device_module = get_device_info()
+
+
+# hardcoded BF16 type peak flops for NVIDIA A100, H100, H200, B200 GPU and AMD MI250, MI300X, AMD MI325X and Intel PVC
+def get_peak_flops(device_name: str) -> int:
+    try:
+        # Run the lspci command and capture the output
+        result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True)
+        # Filter the output for lines containing both "NVIDIA" and "H100"
+        filtered_lines = [
+            line
+            for line in result.stdout.splitlines()
+            if "NVIDIA" in line and "H100" in line
+        ]
+        # Join all filtered lines into a single string
+        device_name = " ".join(filtered_lines) or device_name
+    except FileNotFoundError as e:
+        logger.warning(f"Error running lspci: {e}, fallback to use device_name")
+    if "A100" in device_name:
+        # data from https://www.nvidia.com/en-us/data-center/a100/
+        return 312e12
+    elif "H100" in device_name:
+        # data from https://www.nvidia.com/en-us/data-center/h100/
+        # NOTE: Specifications are one-half lower without sparsity.
+        if "NVL" in device_name:
+            return 835e12
+        elif "PCIe" in device_name:
+            return 756e12
+        else:  # for H100 SXM and other variants
+            return 989e12
+    elif "H200" in device_name:
+        # data from https://www.nvidia.com/en-us/data-center/h200/
+        return 989e12
+    elif "B200" in device_name:
+        # data from https://nvdam.widen.net/s/wwnsxrhm2w/blackwell-datasheet-3384703
+        return 4.5e15
+    elif "MI300X" in device_name or "MI325X" in device_name:
+        # MI300X data from https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html
+        # MI325X data from https://www.amd.com/en/products/accelerators/instinct/mi300/mi325x.html
+        return 1300e12
+    elif "MI250X" in device_name:
+        # data from https://www.amd.com/en/products/accelerators/instinct/mi200/mi250x.html (per GCD)
+        return 191.5e12
+    elif "Data Center GPU Max 1550" in device_name:
+        # Also known as Ponte Vecchio (PVC).
+        # data from https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2025-0/intel-xe-gpu-architecture.html
+        # Dot Product Accumulate Systolic (DPAS):
+        # - Freq: 1300MHz
+        # - #ops: 512
+        # Full EU mode (i.e. 512 max compute units): 340.8 TFLOPS (BF16)
+        # Standard EU mode (i.e. 448 max compute units): 298.2 TFLOPS (BF16)
+        max_comp_units = torch.xpu.get_device_properties("xpu").max_compute_units
+        return 512 * max_comp_units * 1300 * 10**6
+    elif "l40s" in device_name:
+        # data from: "https://resources.nvidia.com/en-us-l40s/l40s-datasheet-28413"
+        return 362e12
+
+    else:  # for other GPU types, assume A100
+        logger.warning(f"Peak flops undefined for: {device_name}, fallback to A100")
+        return 312e12
+
+
+def check_if_feature_in_pytorch(
+    feature_name: str,
+    pull_request: str,
+    min_nightly_version=None,
+) -> None:
+    if "git" in torch.__version__:  # pytorch is built from source
+        # notify users to check if the pull request is included in their pytorch
+        logger.warning(
+            "detected that the pytorch is built from source. Please make sure the PR "
+            f"({pull_request}) is included in pytorch for correct {feature_name}."
+        )
+    elif min_nightly_version is not None and torch.__version__ < min_nightly_version:
+        logger.warning(
+            f"detected that the pytorch version {torch.__version__} is older than "
+            f"{min_nightly_version}. Please upgrade a newer version to include the "
+            f"change in ({pull_request}) for correct {feature_name}."
+        )
 
 
 def get_dataset_absolute_path(paths):
@@ -143,15 +241,33 @@ def unpatchify(x, patch_size, orig_size=None):
     return imgs
 
 
-def clip_grad_norm(params, max_norm):
+def clip_grad_norm(params, max_norm, with_name=False):
     if max_norm > 0:
-        return torch.nn.utils.clip_grad_norm_(params, max_norm)
+        if with_name:
+            params = list(zip(*params))[1]
+        return torch.nn.utils.clip_grad_norm_(params, max_norm, foreach=True)
     else:
-        device = params[0].grad.device
-        total_norm = torch.norm(
-            torch.stack([torch.norm(p.grad.detach(), 2.0).to(device) for p in params]),
-            2.0,
-        )
+        if with_name:
+            for name, p in params:
+                if p.grad is None:
+                    print(name)
+                    synchronize()
+
+            device = params[0][1].grad.device
+            total_norm = torch.norm(
+                torch.stack(
+                    [torch.norm(p.grad.detach(), 2.0).to(device) for _, p in params]
+                ),
+                2.0,
+            )
+        else:
+            device = params[0].grad.device
+            total_norm = torch.norm(
+                torch.stack(
+                    [torch.norm(p.grad.detach(), 2.0).to(device) for p in params]
+                ),
+                2.0,
+            )
         return total_norm
 
 
@@ -678,6 +794,97 @@ def contains_fsdp(model: nn.Module) -> bool:
     )
 
 
+def get_memory_stats(device: torch.device, reset_stats: bool = True) -> dict:
+    """
+    Computes a memory summary for the passed in device. If ``reset_stats`` is ``True``, this will
+    also reset CUDA's peak memory tracking. This is useful to get data around relative use of peak
+    memory (e.g. peak memory during model init, during forward, etc) and optimize memory for
+    individual sections of training.
+
+    Args:
+        device (torch.device): Device to get memory summary for. Only CUDA devices are supported.
+        reset_stats (bool): Whether to reset CUDA's peak memory tracking.
+
+    Returns:
+        Dict[str, float]: A dictionary containing the peak memory active, peak memory allocated,
+        and peak memory reserved. This dict is useful for logging memory stats.
+
+    Raises:
+        ValueError: If the passed-in device is not CUDA.
+    """
+    if device.type != "cuda":
+        raise ValueError(
+            f"Logging memory stats is only supported on CUDA devices, got {device}"
+        )
+
+    peak_memory_active = torch.cuda.memory_stats().get("active_bytes.all.peak", 0) / (
+        1024**3
+    )
+    peak_mem_alloc = torch.cuda.max_memory_allocated(device) / (1024**3)
+    peak_mem_reserved = torch.cuda.max_memory_reserved(device) / (1024**3)
+
+    if reset_stats:
+        torch.cuda.reset_peak_memory_stats(device)
+
+    memory_stats = {
+        "peak_memory_active": peak_memory_active,
+        "peak_memory_alloc": peak_mem_alloc,
+        "peak_memory_reserved": peak_mem_reserved,
+    }
+    return memory_stats
+
+
+def cleanup_before_training() -> None:
+    """
+    Call gc collect, empty CUDA cache, and reset peak memory stats.
+    """
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+
+
+def set_determinism(seed) -> None:
+    """
+    Set Python, PyTorch, CUDA seeds and cudnn settings for reproducibility
+    """
+    if seed > 0:
+        # CPU and GPU determinism
+        torch.manual_seed(seed)
+        # set deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # set Python seed
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.use_deterministic_algorithms(True)
+        # env var for deterministic CuBLAS
+        # https://pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    else:
+        # ensure we turn off deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
+
+
+def module_filter_fn(mod: nn.Module, fqn: str, filter_fqns: list[str]) -> bool:
+    """
+    Filter function to determine which modules should be converted.
+    For both Float8 and MXFP8, we only convert Linear modules
+    with dimensions divisible by 16 and not matching any filtered FQNs.
+    """
+    if not isinstance(mod, nn.Linear):
+        return False
+
+    # All dims must be divisible by 16 due to float8 tensorcore hardware requirements.
+    dims_multiples_of_16 = (
+        mod.weight.shape[0] % 16 == 0 and mod.weight.shape[1] % 16 == 0
+    )
+
+    # If the fqn matches any filtered fqn, then we should not convert this module.
+    is_filtered_fqn = any(filter_fqn in fqn for filter_fqn in filter_fqns)
+
+    return dims_multiples_of_16 and is_filtered_fqn
+
+
 # used to avoid stragglers in garbage collection
 class GarbageCollection:
     def __init__(self, gc_freq: int = 1000, debug: bool = False):
@@ -706,4 +913,4 @@ class GarbageCollection:
     def collect(reason: str, generation: int = 1):
         begin = time.monotonic()
         gc.collect(generation)
-        logger.info("[GC] %s %.2f seconds.", reason, time.monotonic() - begin)
+        print("[GC] %s %.2f seconds.", reason, time.monotonic() - begin)

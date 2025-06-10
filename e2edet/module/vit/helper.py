@@ -102,7 +102,7 @@ def lecun_normal_(tensor):
 
 
 def init_weights_vit(module: nn.Module, name: str = ""):
-    """ ViT weight initialization, original impl (for reproducibility) """
+    """ViT weight initialization, original impl (for reproducibility)"""
     if isinstance(module, nn.Linear):
         if hasattr(module, "final_linear") and module.final_linear:
             print("final_linear")
@@ -140,7 +140,7 @@ def init_weights_vit(module: nn.Module, name: str = ""):
 
 
 def init_weights_vit_jax(module: nn.Module, name: str = "", head_bias: float = 0.0):
-    """ ViT weight initialization, matching JAX (Flax) impl """
+    """ViT weight initialization, matching JAX (Flax) impl"""
     if isinstance(module, nn.Linear):
         if name.startswith("head"):
             nn.init.zeros_(module.weight)
@@ -151,9 +151,11 @@ def init_weights_vit_jax(module: nn.Module, name: str = "", head_bias: float = 0
         else:
             nn.init.xavier_uniform_(module.weight)
             if module.bias is not None:
-                nn.init.normal_(
-                    module.bias, std=1e-6
-                ) if "mlp" in name else nn.init.zeros_(module.bias)
+                (
+                    nn.init.normal_(module.bias, std=1e-6)
+                    if "mlp" in name
+                    else nn.init.zeros_(module.bias)
+                )
     elif isinstance(module, nn.Conv2d):
         lecun_normal_(module.weight)
         if module.bias is not None:
@@ -161,7 +163,7 @@ def init_weights_vit_jax(module: nn.Module, name: str = "", head_bias: float = 0
 
 
 def init_weights_vit_moco(module: nn.Module, name: str = ""):
-    """ ViT weight initialization, matching moco-v3 impl minus fixed PatchEmbed """
+    """ViT weight initialization, matching moco-v3 impl minus fixed PatchEmbed"""
     if isinstance(module, nn.Linear):
         if "qkv" in name:
             # treat the weights of Q, K, V separately
@@ -249,8 +251,7 @@ def drop_path(
 
 
 class DropPath(nn.Module):
-    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
-    """
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks)."""
 
     def __init__(self, drop_prob=None, scale_by_keep=True):
         super(DropPath, self).__init__()
@@ -262,8 +263,7 @@ class DropPath(nn.Module):
 
 
 class Mlp(nn.Module):
-    """ MLP as used in Vision Transformer, MLP-Mixer and related networks
-    """
+    """MLP as used in Vision Transformer, MLP-Mixer and related networks"""
 
     def __init__(
         self,
@@ -349,7 +349,7 @@ class RelativePositionBias(nn.Module):
 
 
 class LayerNorm(nn.Module):
-    r""" LayerNorm that supports two data formats: channels_last (default) or channels_first.
+    r"""LayerNorm that supports two data formats: channels_last (default) or channels_first.
     The ordering of the dimensions in the inputs. channels_last corresponds to inputs with
     shape (batch_size, height, width, channels) while channels_first corresponds to inputs
     with shape (batch_size, channels, height, width).
@@ -430,7 +430,11 @@ class BasicBlock(nn.Module):
 
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(
-                in_channels, out_channels, kernel_size=1, stride=stride, bias=False,
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                bias=False,
             )
             self.shortcut_norm = get_norm(norm, out_channels)
         else:

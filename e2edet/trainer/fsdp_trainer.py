@@ -3,9 +3,16 @@ import os
 import torch
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 
+torch._dynamo.config.cache_size_limit = 50
+
 from e2edet.utils.meter import Meter
 from e2edet.utils.distributed import is_master, get_world_size
-from e2edet.utils.general import print_model_parameters, get_batch_size, get_root
+from e2edet.utils.general import (
+    print_model_parameters,
+    get_batch_size,
+    get_root,
+    cleanup_before_training,
+)
 from e2edet.utils.logger import TensorboardLogger
 from e2edet.utils.timer import Timer
 from e2edet.trainer import register_trainer
@@ -19,7 +26,9 @@ from e2edet.module.parallelize import (
     CheckpointManager,
     parallelize_model,
     reduce_dict,
+    set_determinism,
 )
+from e2edet.module.quantization import Float8Converter
 from e2edet.utils.logger import logger
 
 from .base_trainer import BaseTrainer
@@ -49,7 +58,13 @@ class FSDPTrainer(BaseTrainer):
         self.dp_rank = dp_rank
         self.dp_mesh = dp_mesh
 
+        self.use_float8 = self.config.quantization.use_float8
+
         os.environ["DATA_WORLD_SIZE"] = str(dp_degree)
+        self._set_device()
+        seed = self.running_config.seed
+        set_determinism(self.world_mesh, self.device, seed)
+        cleanup_before_training()
 
     @property
     def model_without_ddp(self):
@@ -82,6 +97,17 @@ class FSDPTrainer(BaseTrainer):
     def _parallelize_model(self):
         self.parallel = True
 
+        if self.use_float8:
+            model_converter = Float8Converter(
+                self.config.quantization.enable_fsdp_float8_all_gather,
+                self.config.quantization.precompute_float8_dynamic_scale_for_fsdp,
+                self.config.quantization.force_recompute_fp8_weight_in_bwd,
+                self.parallel_dims,
+                recipe_name=self.config.quantization.recipe_name,
+                filter_fqns=self.config.quantization.filter_fqns,
+            )
+            model_converter.convert(self.model)
+
         parallelize_model(
             self.model,
             self.world_mesh,
@@ -93,6 +119,7 @@ class FSDPTrainer(BaseTrainer):
             self.parallel_config.mp_param,
             self.parallel_config.mp_reduce,
             self.parallel_config.enable_compiled_autograd,
+            self.parallel_config.cpu_offload,
         )
 
         # move sharded model to CPU/GPU and initialize weights via DTensor
@@ -109,8 +136,6 @@ class FSDPTrainer(BaseTrainer):
 
         # with torch.device("meta"):
         self.model = build_model(self.config, **model_params)
-        self.writer.write("===== Model =====")
-        self.writer.write(self.model)
 
         if (
             self.running_config.resume
@@ -152,11 +177,15 @@ class FSDPTrainer(BaseTrainer):
             self.max_update = 0
 
         self._parallelize_model()
+        self.writer.write("===== Model =====")
+        self.writer.write(self.model)
+        
         self.optimizer = build_optimizer(self.config, self.model)
         if self.config.scheduler.type == "cosine_annealing":
             self.config.scheduler.params.T_max = self.max_update
         self.lr_scheduler = build_scheduler(self.config, self.optimizer)
         self._init_params_and_checkpoint()
+        self._init_losses_and_metrics()
 
     def _init_params_and_checkpoint(self):
         self.writer.write("Torch version is: " + torch.__version__)
@@ -169,7 +198,7 @@ class FSDPTrainer(BaseTrainer):
             if self.running_config.use_fp16 == "none"
             else self.running_config.use_fp16
         )
-        self.grad_scaler = ShardedGradScaler() if self.use_fp16 is not False else None
+        self.grad_scaler = ShardedGradScaler() if self.use_fp16 == "float16" else None
 
         self.writer.write("CheckpointManager is initialized...")
         self.checkpoint = CheckpointManager(self.config, self)
@@ -247,10 +276,18 @@ class FSDPTrainer(BaseTrainer):
             self.engine.train_epoch()
         self.finalize()
 
-    def _sync_losses_and_metrics(self, split, loss_dict, iter_per_update=1):
+    def _sync_losses_and_metrics(self, split, output):
         split_batch_size = (
-            get_batch_size(self.running_config.batch_size) // iter_per_update
+            get_batch_size(self.running_config.batch_size) // self.iter_per_update
         )
-        update_dict = reduce_dict(loss_dict, self.dp_mesh)
+        losses = output["losses_stat"]
+        metrics = output["metrics"]
+
+        reduced_losses = reduce_dict(losses, self.dp_mesh)
+        reduced_metrics = reduce_dict(metrics, self.dp_mesh)
+
+        update_dict = {}
+        update_dict.update(reduced_losses)
+        update_dict.update(reduced_metrics)
 
         self.meters[split].update(update_dict, split_batch_size)

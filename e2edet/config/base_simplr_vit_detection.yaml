@@ -155,12 +155,13 @@ optimizer:
     lr: 0.0001
     lr_backbone: 0.0001
     lr_decay_rate: 0.7
-    use_oss: false
     weight_decay: 0.05
     eps: 1.0e-08
     betas:
       - 0.9
       - 0.999
+    fused: false
+    foreach: true
     early_step_in_backward: false
 
 training:

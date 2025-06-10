@@ -50,19 +50,18 @@ def build_dataloader(config, dataset_type, dataset, rank=None, world_size=None):
     num_workers = training.num_workers
     pin_memory = training.pin_memory
 
-    other_args = {"rank": rank, "world_size": world_size}
-    if dataset_type == "train":
-        other_args["shuffle"] = True
+    other_args = {"rank": rank, "num_replicas": world_size}
+    other_args["shuffle"] = True if dataset_type == "train" else False
 
-        if get_world_size() > 1:
-            other_args["sampler"] = build_sampler(config, dataset, other_args)
-            other_args.pop("shuffle")
-    else:
-        other_args["shuffle"] = False
-
-        if get_world_size() > 1:
-            other_args["sampler"] = DistributedSampler(dataset, **other_args)
-            other_args.pop("shuffle")
+    if get_world_size() > 1:
+        other_args["sampler"] = (
+            build_sampler(config, dataset, other_args)
+            if dataset_type == "train"
+            else DistributedSampler(dataset, **other_args)
+        )
+        other_args.pop("shuffle")
+        other_args.pop("rank")
+        other_args.pop("num_replicas")
 
     if dataset_type == "train":
         other_args["batch_size"] = get_batch_size(training.batch_size)

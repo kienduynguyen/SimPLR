@@ -8,7 +8,7 @@ from e2edet import ops
 
 class BoxAttnFunction(Function):
     @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
+    @custom_fwd(cast_inputs=torch.float32, device_type="cuda")
     def forward(
         ctx,
         value,
@@ -38,7 +38,7 @@ class BoxAttnFunction(Function):
         return output
 
     @staticmethod
-    @custom_bwd
+    @custom_bwd(device_type="cuda")
     @once_differentiable
     def backward(ctx, grad_output):
         (
@@ -63,7 +63,7 @@ class BoxAttnFunction(Function):
 
 class InstanceAttnFunction(Function):
     @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
+    @custom_fwd(cast_inputs=torch.float32, device_type="cuda")
     def forward(
         ctx,
         value,
@@ -105,7 +105,7 @@ class InstanceAttnFunction(Function):
         return output, mask_output
 
     @staticmethod
-    @custom_bwd
+    @custom_bwd(device_type="cuda")
     @once_differentiable
     def backward(ctx, grad_output, grad_mask_output):
         (
@@ -148,7 +148,7 @@ class InstanceAttnFunction(Function):
 
 class FastBoxAttnFunction(Function):
     @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
+    @custom_fwd(cast_inputs=torch.float32, device_type="cuda")
     def forward(
         ctx,
         value,
@@ -178,7 +178,7 @@ class FastBoxAttnFunction(Function):
         return output
 
     @staticmethod
-    @custom_bwd
+    @custom_bwd(device_type="cuda")
     @once_differentiable
     def backward(ctx, grad_output):
         (
@@ -203,7 +203,7 @@ class FastBoxAttnFunction(Function):
 
 class FastInstanceAttnFunction(Function):
     @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
+    @custom_fwd(cast_inputs=torch.float32, device_type="cuda")
     def forward(
         ctx,
         value,
@@ -241,7 +241,7 @@ class FastInstanceAttnFunction(Function):
         return output, mask_output
 
     @staticmethod
-    @custom_bwd
+    @custom_bwd(device_type="cuda")
     @once_differentiable
     def backward(ctx, grad_output, grad_mask_output):
         (

@@ -59,7 +59,7 @@ std::vector<at::Tensor> fast_instance_attn_cuda_forward(
         auto output_columns = output_n.select(0, n);
         auto mask_output_columns = mask_output_n.select(0, n);
 
-        AT_DISPATCH_FLOATING_TYPES(value.type(), "fast_instance_attn_forward_cuda", ( [&] {
+        AT_DISPATCH_FLOATING_TYPES(value.scalar_type(), "fast_instance_attn_forward_cuda", ( [&] {
             fast_instance_attn_im2col_cuda(
                 at::cuda::getCurrentCUDAStream(),
                 value.data<scalar_t>() + n * im2col_step_ * per_value_size,
@@ -133,7 +133,7 @@ std::vector<at::Tensor> fast_instance_attn_cuda_backward(
     {
         auto grad_output_columns = grad_output_n.select(0, n);
         auto grad_mask_output_columns = grad_mask_output_n.select(0, n);
-        AT_DISPATCH_FLOATING_TYPES(value.type(), "fast_instance_attn_backward_cuda", ( [&] {
+        AT_DISPATCH_FLOATING_TYPES(value.scalar_type(), "fast_instance_attn_backward_cuda", ( [&] {
             fast_instance_attn_col2im_cuda(
                 at::cuda::getCurrentCUDAStream(),
                 grad_output_columns.data<scalar_t>(),

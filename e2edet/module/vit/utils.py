@@ -3,8 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from e2edet.utils.distributed import synchronize
-
 
 def window_partition(x, window_size):
     """

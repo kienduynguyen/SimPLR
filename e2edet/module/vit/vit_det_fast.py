@@ -258,9 +258,9 @@ class VisionTransformerDetFastForBeit(nn.Module):
             self.rel_pos_bias = None
 
         self.pretrain_use_cls_token = pretrain_use_cls_token
-        self.num_features = (
-            self.embed_dim
-        ) = embed_dim  # num_features for consistency with other models
+        self.num_features = self.embed_dim = (
+            embed_dim  # num_features for consistency with other models
+        )
 
         self.patch_embed = PatchEmbed(
             kernel_size=(patch_size, patch_size),
@@ -342,6 +342,10 @@ class VisionTransformerDetFastForBeit(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"blocks"}
 
     def output_shape(self):
         return {
@@ -1107,6 +1111,10 @@ class ViTUpFirstUp1(nn.Module):
                 raise NotImplementedError
 
             self.add_module(f"stage_{i}", layer)
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
 
     def forward(self, x, mask):
         features = self.net(x)

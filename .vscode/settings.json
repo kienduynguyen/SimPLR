@@ -2,21 +2,37 @@
     "workbench.colorCustomizations": {
         "activityBar.activeBackground": "#2f7c47",
         "activityBar.background": "#2f7c47",
-        "activityBar.foreground": "#bca9e1",
-        "activityBar.inactiveForeground": "#bca9e199",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
         "activityBarBadge.background": "#422c74",
-        "activityBarBadge.foreground": "#bca9e1",
-        "commandCenter.border": "#bca9e199",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
         "sash.hoverBorder": "#2f7c47",
         "statusBar.background": "#215732",
-        "statusBar.foreground": "#bca9e1",
+        "statusBar.foreground": "#e7e7e7",
         "statusBarItem.hoverBackground": "#2f7c47",
         "statusBarItem.remoteBackground": "#215732",
-        "statusBarItem.remoteForeground": "#bca9e1",
+        "statusBarItem.remoteForeground": "#e7e7e7",
         "titleBar.activeBackground": "#215732",
-        "titleBar.activeForeground": "#bca9e1",
+        "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#21573299",
-        "titleBar.inactiveForeground": "#bca9e199"
+        "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "peacock.remoteColor": "#215732"
+    "peacock.remoteColor": "#215732",
+    "files.associations": {
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "span": "cpp",
+        "algorithm": "cpp",
+        "chrono": "cpp",
+        "limits": "cpp",
+        "ratio": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "charconv": "cpp",
+        "functional": "cpp",
+        "utility": "cpp",
+        "variant": "cpp"
+    }
 }

@@ -9,9 +9,12 @@
 import time
 import os
 import collections
+import warnings
 
 import torch
 from torch.amp import GradScaler
+
+torch._dynamo.config.cache_size_limit = 50
 
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split(".")[:2])
 
@@ -22,9 +25,16 @@ from e2edet.utils.distributed import (
     is_dist_avail_and_initialized,
     synchronize,
 )
-from e2edet.utils.general import print_model_parameters
+from e2edet.utils.general import (
+    print_model_parameters,
+    get_batch_size,
+    cleanup_before_training,
+    set_determinism,
+    GarbageCollection,
+)
 from e2edet.utils.logger import Logger, TensorboardLogger
 from e2edet.utils.timer import Timer
+from e2edet.utils.distributed import reduce_dict
 from e2edet.model import build_model
 from e2edet.optim import build_optimizer
 from e2edet.optim.scheduler import build_scheduler
@@ -45,6 +55,18 @@ class BaseTrainer:
         if self.configuration is not None:
             self.args = self.configuration.args
 
+        if self.config.quantization.use_float8:
+            warnings.warn("quantization is onlys supported in FSDPTrainer")
+
+        self.gc_handler = GarbageCollection(
+            gc_freq=self.running_config.gc_freq,
+            debug=self.running_config.logger_level == "debug",
+        )
+        self._set_device()
+        seed = self.running_config.seed
+        set_determinism(seed)
+        cleanup_before_training()
+
     @property
     def model_without_ddp(self):
         if self.parallel:
@@ -53,7 +75,6 @@ class BaseTrainer:
             return self.model
 
     def load(self):
-        self._set_device()
         self.run_type = self.running_config.get("run_type", "train")
         self.writer = Logger(
             self.running_config.save_dir,
@@ -110,8 +131,11 @@ class BaseTrainer:
     def load_model_and_optimizer(self):
         self.writer.write("Loading model and optimizer", "info")
 
-        num_classes = self.datasets[self.splits[0]].get_answer_size()
-        self.model = build_model(self.config, num_classes)
+        if hasattr(self.datasets[self.splits[0]], "get_model_params"):
+            model_params = self.datasets[self.splits[0]].get_model_params()
+        else:
+            model_params = {}
+        self.model = build_model(self.config, **model_params)
 
         if "cuda" in str(self.device):
             device_info = "CUDA Device {} is: {}".format(
@@ -292,7 +316,7 @@ class BaseTrainer:
         self._resume_training_state_if_needed()
         while self.current_update < self.max_update:
             self.current_epoch += 1
-            self.engine.train_epoch(0)
+            self.engine.train_epoch()
         self.finalize()
 
     def _resume_training_state_if_needed(self):
@@ -360,3 +384,19 @@ class BaseTrainer:
         synchronize()
         self.writer.write(text + ": " + self.profiler.get_time_since_start(), "debug")
         self.profiler.reset()
+
+    def _sync_losses_and_metrics(self, split, output):
+        losses = output["losses_stat"]
+        metrics = output["metrics"]
+
+        reduced_losses = reduce_dict(losses)
+        reduced_metrics = reduce_dict(metrics)
+
+        update_dict = {}
+        update_dict.update(reduced_losses)
+        update_dict.update(reduced_metrics)
+
+        split_batch_size = (
+            get_batch_size(self.running_config.batch_size) // self.iter_per_update
+        )
+        self.trainer.meters[split].update(update_dict, split_batch_size)

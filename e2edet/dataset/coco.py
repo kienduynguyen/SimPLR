@@ -60,6 +60,9 @@ class COCODetection(BaseDataset):
 
         return self.answer_processor.get_size()
 
+    def get_model_params(self):
+        return {"num_classes": self.answer_processor.get_size()}
+
     def get_api(self):
         if self.dataset_name == "coco":
             return self.data.coco

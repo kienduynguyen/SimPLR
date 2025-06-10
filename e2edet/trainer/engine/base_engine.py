@@ -1,7 +1,8 @@
 import torch
+import torch.distributed as dist
 
-from e2edet.utils.distributed import reduce_dict
-from e2edet.utils.general import clip_grad_norm, filter_grads
+from e2edet.utils.general import filter_grads, get_memory_stats
+from e2edet.module.parallelize import clip_grad_norm_
 
 
 class BaseEngine:
@@ -13,6 +14,7 @@ class BaseEngine:
         self.dataloaders = self.trainer.dataloaders
         self.datasets = self.trainer.datasets
         self.params = filter_grads(self.model.parameters())
+        self.num_skip = 0
 
     @torch.no_grad()
     def evaluate(self, split):
@@ -29,7 +31,7 @@ class BaseEngine:
 
         return (current_update + update_per_epoch - 1) // update_per_epoch
 
-    def train_epoch(self, trained_batch_idx):
+    def train_epoch(self):
         raise NotImplementedError
 
     def _compute_loss(self, output, target):
@@ -70,7 +72,11 @@ class BaseEngine:
             self.trainer.grad_scaler.unscale_(self.optimizer)
             self.trainer.profile("Unscale time")
 
-        norm = clip_grad_norm(self.params, max_norm)
+        norm = clip_grad_norm_(self.params, max_norm)
+        found_inf = torch.tensor([0], device=self.trainer.device)
+        if torch.isnan(norm) or torch.isinf(norm):
+            found_inf.fill_(1)
+        dist.all_reduce(found_inf, group=dist.group.WORLD)
         self.trainer.profile("Clip grad time")
 
         if self.trainer.grad_scaler is not None:
@@ -82,8 +88,14 @@ class BaseEngine:
             self.optimizer.step()
             self.trainer.profile("Step time")
 
-        if torch.isnan(norm).item() or torch.isinf(norm).item():
+        if found_inf.item() > 0:
+            self.num_skip += 1
+            if self.num_skip >= 100:
+                raise RuntimeError("Skipping iteration for more than 100 steps...")
+
             return current_update
+        else:
+            self.num_skip = 0
 
         if self.trainer.tb_writer is not None:
             self.trainer.tb_writer.add_scalars({"total_norm": norm}, current_update)
@@ -92,47 +104,48 @@ class BaseEngine:
 
         return current_update
 
-    def _sync_losses_and_metrics(self, split, output):
-        losses = output["losses_stat"]
-        metrics = output["metrics"]
-
-        reduced_losses = reduce_dict(losses)
-        reduced_metrics = reduce_dict(metrics)
-
-        update_dict = {}
-        update_dict.update(reduced_losses)
-        update_dict.update(reduced_metrics)
-
-        batch_size = self.trainer.running_config.batch_size
-        self.trainer.meters[split].update(update_dict, batch_size)
-
     @torch.no_grad()
-    def _update_info(self, split):
-        current_update = self.trainer.current_update
-        log_interval = self.trainer.log_interval
+    def _update_info(self, split, current_update):
+        if split == "train":
+            log_interval = self.trainer.log_interval
+        else:
+            log_interval = 1
 
-        if split == "train" and current_update % log_interval == 0:
+        if current_update % log_interval == 0:
             stats = {}
-            ups = log_interval / self.trainer.timers["train"].unix_time_since_start()
-            if "cuda" in str(self.trainer.device):
-                stats["max mem"] = torch.cuda.max_memory_allocated() / 1000
-                stats["max mem"] //= 1000
 
-            stats.update(
-                {
-                    "epoch": self.current_epoch,
-                    "update": current_update,
-                    "max_update": self.trainer.max_update,
-                    "lr": [
-                        param_group["lr"] for param_group in self.optimizer.param_groups
-                    ],
-                    "ups": "{:.2f}".format(ups),
-                    "time": self.trainer.timers["train"].get_time_since_start(),
-                    "time_since_start": self.trainer.total_timer.get_time_since_start(),
-                    "eta": self.trainer._calculate_time_left(),
-                }
-            )
+            if "cuda" in str(self.trainer.device):
+                stats.update(get_memory_stats(self.trainer.device))
+
+            ups = log_interval / self.trainer.timers[split].unix_time_since_start()
+
+            if split == "train":
+                stats.update(
+                    {
+                        "epoch": self.current_epoch,
+                        "data_epoch": self.trainer.current_epoch,
+                        "update": current_update,
+                        "max_update": self.trainer.max_update,
+                        "lr": [
+                            param_group["lr"]
+                            for param_group in self.optimizer.param_groups
+                        ],
+                        "ups": "{:.2f}".format(ups),
+                        "time": self.trainer.timers[split].get_time_since_start(),
+                        "time_since_start": self.trainer.total_timer.get_time_since_start(),
+                        "eta": self.trainer._calculate_time_left(),
+                    }
+                )
+            else:
+                stats.update(
+                    {
+                        "update": current_update,
+                        "ups": "{:.2f}".format(ups),
+                        "time": self.trainer.timers[split].get_time_since_start(),
+                        "time_since_start": self.trainer.total_timer.get_time_since_start(),
+                    }
+                )
             self.trainer._print_log(split, stats)
             self.trainer._update_tensorboard(split)
-            self.trainer.timers["train"].reset()
+            self.trainer.timers[split].reset()
         self.trainer.profile("Update info time")

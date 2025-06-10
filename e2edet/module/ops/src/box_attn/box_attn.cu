@@ -51,7 +51,7 @@ at::Tensor box_attn_cuda_forward(
 
     for (int n = 0; n < batch / im2col_step_; ++n) {
         auto output_columns = output_n.select(0, n);
-        AT_DISPATCH_FLOATING_TYPES(value.type(), "box_attn_forward_cuda", ( [&] {
+        AT_DISPATCH_FLOATING_TYPES(value.scalar_type(), "box_attn_forward_cuda", ( [&] {
             box_attn_im2col_cuda(
                 at::cuda::getCurrentCUDAStream(),
                 value.data<scalar_t>() + n * im2col_step_ * per_value_size,
@@ -114,7 +114,7 @@ std::vector<at::Tensor> box_attn_cuda_backward(
 
     for (int n = 0; n < batch / im2col_step_; ++n) {
         auto grad_output_columns = grad_output_n.select(0, n);
-        AT_DISPATCH_FLOATING_TYPES(value.type(), "box_attn_backward_cuda", ( [&] {
+        AT_DISPATCH_FLOATING_TYPES(value.scalar_type(), "box_attn_backward_cuda", ( [&] {
             box_attn_col2im_cuda(
                 at::cuda::getCurrentCUDAStream(),
                 grad_output_columns.data<scalar_t>(),

@@ -93,6 +93,9 @@ class BaseDataset(Dataset):
         else:
             return self._prepare_batch(batch, non_blocking=non_blocking)
 
+    def get_model_params(self):
+        return {}
+
     @property
     def dataset_type(self):
         return self._dataset_type

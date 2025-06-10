@@ -1,4 +1,3 @@
-import math
 import copy
 
 import omegaconf
@@ -6,7 +5,6 @@ import omegaconf
 from e2edet.model import BaseDetectionModel, register_model
 from e2edet.module import build_vit_det, build_transformer, build_vit_det_fast
 from e2edet.utils.modeling import get_parameters, get_vit_parameters
-from e2edet.utils.distributed import synchronize
 
 
 @register_model("simplr")

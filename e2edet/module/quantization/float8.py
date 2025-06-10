@@ -12,8 +12,8 @@ from dataclasses import field
 import torch
 import torch.nn as nn
 
-from nn.parallelize import ParallelDims
-from util.misc import has_cuda_capability, module_filter_fn
+from e2edet.module.parallelize import ParallelDims
+from e2edet.utils.general import has_cuda_capability, module_filter_fn
 
 
 class ModelConverter(Protocol):

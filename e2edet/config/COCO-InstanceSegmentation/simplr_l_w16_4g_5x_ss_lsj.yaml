@@ -11,7 +11,7 @@ loss:
     dice_loss_coef: 5
 
 model_config:
-  boxer2d_vit:
+  simplr:
     backbone:
       arch: mae_large_patch16
       ms_params:
@@ -43,7 +43,7 @@ model_config:
           - 21
           - 22
     transformer:
-      type: box_transformer_v2
+      type: simplr_transformer
       params:
         nlevel: 1
         nhead: 8

@@ -1,6 +1,6 @@
 import os
 import math
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional, Union
 
 import torch
 import torch.distributed._functional_collectives as funcol
@@ -53,7 +53,7 @@ def _dist_reduce(
     x: torch.Tensor,
     reduceOp: str,
     mesh: DeviceMesh,
-    extra_pg: dist.ProcessGroup | None = None,
+    extra_pg: Optional[dist.ProcessGroup] = None,
 ) -> float:
     """Perform distributed reduction on a tensor.
 
@@ -79,7 +79,7 @@ def _dist_reduce(
 def dist_max(
     x: torch.Tensor,
     mesh: DeviceMesh,
-    extra_pg: dist.ProcessGroup | None = None,
+    extra_pg: Optional[dist.ProcessGroup] = None,
 ) -> float:
     return _dist_reduce(
         x, reduceOp=c10d.ReduceOp.MAX.name, mesh=mesh, extra_pg=extra_pg
@@ -89,7 +89,7 @@ def dist_max(
 def dist_mean(
     x: torch.Tensor,
     mesh: DeviceMesh,
-    extra_pg: dist.ProcessGroup | None = None,
+    extra_pg: Optional[dist.ProcessGroup] = None,
 ) -> float:
     return _dist_reduce(
         x, reduceOp=c10d.ReduceOp.AVG.name, mesh=mesh, extra_pg=extra_pg
@@ -107,9 +107,9 @@ def reduce_dict(dictionary: Dict[str, torch.Tensor], mesh: DeviceMesh):
 
 
 def set_determinism(
-    world_mesh: DeviceMesh | None,
+    world_mesh: DeviceMesh,
     device: torch.device,
-    seed: int | None = None,
+    seed: Optional[int] = None,
     deterministic: bool = False,
     distinct_seed_mesh_dim: str = "pp",
 ) -> None:
@@ -188,12 +188,11 @@ def set_determinism(
 
 @torch.no_grad()
 def clip_grad_norm_(
-    parameters: torch.Tensor | Iterable[torch.Tensor],
+    parameters: Union[torch.Tensor, Iterable[torch.Tensor]],
     max_norm: float,
     norm_type: float = 2.0,
     error_if_nonfinite: bool = False,
-    foreach: bool | None = None,
-    pp_mesh: DeviceMesh | None = None,
+    foreach: Optional[bool] = None,
 ) -> torch.Tensor:
     """
     Clip the gradient norm of an iterable of parameters.
@@ -215,7 +214,6 @@ def clip_grad_norm_(
             If ``None``, use the foreach implementation for CUDA and CPU native tensors and silently
             fall back to the slow implementation for other device types.
             Default: ``None``
-        pp_mesh: pipeline parallel device mesh. If not None, will reduce gradient norm across PP stages.
 
     Returns:
         Total norm of the parameter gradients (viewed as a single vector).
@@ -242,14 +240,6 @@ def clip_grad_norm_(
         # If only using PP, total_norm will be a local tensor.
 
         total_norm = total_norm.full_tensor()
-
-    if pp_mesh is not None:
-        if math.isinf(norm_type):
-            dist.all_reduce(total_norm, op=dist.ReduceOp.MAX, group=pp_mesh.get_group())
-        else:
-            total_norm **= norm_type
-            dist.all_reduce(total_norm, op=dist.ReduceOp.SUM, group=pp_mesh.get_group())
-            total_norm **= 1.0 / norm_type
 
     torch.nn.utils.clip_grads_with_norm_(parameters, max_norm, total_norm, foreach)
     return total_norm

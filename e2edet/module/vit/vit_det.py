@@ -733,9 +733,9 @@ class VisionTransformerDetForBeit(nn.Module):
             self.rel_pos_bias = None
 
         self.pretrain_use_cls_token = pretrain_use_cls_token
-        self.num_features = (
-            self.embed_dim
-        ) = embed_dim  # num_features for consistency with other models
+        self.num_features = self.embed_dim = (
+            embed_dim  # num_features for consistency with other models
+        )
 
         self.patch_embed = PatchEmbed(
             kernel_size=(patch_size, patch_size),
@@ -1087,6 +1087,10 @@ class ViTUp(nn.Module):
                 position_encoding, hidden_dim
             )
 
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
+
     def forward(self, x, mask):
         features = self.net(x, mask)
 
@@ -1160,6 +1164,10 @@ class ViTUp1(nn.Module):
                 nn.Conv2d(embed_dim, hidden_dim, kernel_size=1),
                 get_norm(norm, hidden_dim),
             )
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
 
     def forward(self, x, mask):
         feature = self.net(x)
@@ -1273,6 +1281,10 @@ class ViTUpFirstUp(nn.Module):
                 raise NotImplementedError
 
             self.add_module(f"stage_{i}", layer)
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
 
     def forward(self, x, mask):
         features = self.net(x)
@@ -1434,6 +1446,10 @@ class ViTUpFirstUp1(nn.Module):
 
             self.add_module(f"stage_{i}", layer)
 
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
+
     def forward(self, x, mask):
         features = self.net(x)
 
@@ -1569,6 +1585,10 @@ class SimpleFPN(nn.Module):
 
             self.add_module(f"stage_{i}", layers)
 
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
+
     def forward(self, x, mask):
         feature = self.net(x)[self.in_feature]
 
@@ -1687,6 +1707,10 @@ class SimpleFPN1(nn.Module):
             nn.Conv2d(mask_dim, mask_dim, kernel_size=3, padding=1, bias=False),
             get_norm(norm, mask_dim),
         )
+
+    @torch.jit.ignore
+    def shard_modules(self):
+        return {"net.blocks"}
 
     def forward(self, x, mask):
         feature = self.net(x)[self.in_feature]

@@ -4,9 +4,8 @@ import copy
 import omegaconf
 
 from e2edet.model import BaseDetectionModel, register_model
-from e2edet.module import build_vit_det, build_transformer
+from e2edet.module import build_vit_det, build_transformer, build_vit_det_fast
 from e2edet.utils.modeling import get_parameters, get_vit_parameters
-from e2edet.utils.distributed import synchronize
 
 
 @register_model("deformable_detr_vit")
@@ -39,7 +38,7 @@ class DeformableDETRViT(BaseDetectionModel):
         return (backbone_groups, transformer_groups)
 
     def _build(self):
-        self.backbone = build_vit_det(self.config.backbone)
+        self.backbone = build_vit_det_fast(self.config.backbone)
 
         transformer_config = copy.deepcopy(self.config.transformer)
         with omegaconf.open_dict(transformer_config):

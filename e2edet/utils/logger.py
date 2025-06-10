@@ -59,6 +59,7 @@ def log_rank_zero(logger: logging.Logger, msg: str, level: int = logging.INFO) -
 
 class Logger:
     def __init__(self, save_dir, logger_level, log_format, should_not_log):
+        self.logger = None
         self._is_master = is_master()
 
         self.timer = Timer()
@@ -85,6 +86,7 @@ class Logger:
 
         logging.captureWarnings(True)
 
+        global logger
         self.logger = logger
         self._file_only_logger = logging.getLogger(__name__)
         warnings_logger = logging.getLogger("py.warnings")
